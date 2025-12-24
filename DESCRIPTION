@@ -1,0 +1,29 @@
+Package: zzrenvcheck
+Title: Validate R Package Dependencies for Reproducibility
+Version: 0.1.0.9000
+Authors@R:
+    person("Ronald (Ryy) G", "Thomas", , "rgthomas@ucsd.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-1686-4965"))
+Description: Validates that all R packages used in source code are properly
+    declared in DESCRIPTION and locked in renv.lock for reproducibility.
+    Provides automatic detection of package usage, dependency validation,
+    and auto-fix capabilities through CRAN API integration.
+License: GPL-3 + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    desc,
+    jsonlite,
+    cli,
+    httr
+Suggests:
+    testthat (>= 3.0.0),
+    withr,
+    fs,
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+URL: https://github.com/rgt47/zzrenvcheck
+BugReports: https://github.com/rgt47/zzrenvcheck/issues

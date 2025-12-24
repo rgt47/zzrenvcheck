@@ -1,0 +1,43 @@
+name: R Package Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container: rocker/r-ver:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          apt-get update && apt-get install -y \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            libxml2-dev \
+            jq
+
+      - name: Cache renv packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/R/renv
+          key: renv-${{ hashFiles('renv.lock') }}
+          restore-keys: |
+            renv-
+
+      - name: Restore packages from renv.lock
+        run: |
+          Rscript -e "renv::restore()"
+
+      - name: Run R CMD check
+        run: |
+          Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'warning')"
+
+      - name: Run tests
+        run: |
+          Rscript -e "testthat::test_local()"
