@@ -1,0 +1,34 @@
+url: https://rgt47.github.io/zzrenvcheck/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: '#0054AD'
+
+home:
+  title: zzrenvcheck
+  description: >
+    Validate that R package dependencies in source code are correctly
+    declared in DESCRIPTION and locked in renv.lock. Available as both
+    an R package and a standalone shell script.
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, news]
+    right: [search, github]
+  components:
+    intro:
+      text: Get started
+      href: articles/quickstart.html
+    articles:
+      text: Articles
+      menu:
+        - text: Quick start
+          href: articles/quickstart.html
+
+authors:
+  Ronald (Ryy) G. Thomas:
+    href: https://profiles.ucsd.edu/ronald.thomas
+
+development:
+  mode: auto
