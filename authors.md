@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/rgt47/zzrenvcheck/blob/v0.3.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/rgt47/zzrenvcheck/blob/main/DESCRIPTION)
 
 Thomas R (2026). *zzrenvcheck: Validate R Package Dependencies for
 Reproducibility*. R package version 0.3.0,
