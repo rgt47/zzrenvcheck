@@ -18,12 +18,11 @@ Imports:
     cli,
     httr
 Suggests:
-    testthat (>= 3.0.0),
+    tinytest,
     withr,
     fs,
     knitr,
     rmarkdown
-Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://github.com/rgt47/zzrenvcheck
 BugReports: https://github.com/rgt47/zzrenvcheck/issues
