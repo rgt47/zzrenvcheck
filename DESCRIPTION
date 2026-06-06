@@ -1,6 +1,6 @@
 Package: zzrenvcheck
 Title: Validate R Package Dependencies for Reproducibility
-Version: 0.3.0
+Version: 0.3.1
 Authors@R:
     person("Ronald (Ryy) G", "Thomas", , "rgthomas@ucsd.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-1686-4965"))
@@ -15,8 +15,7 @@ RoxygenNote: 7.3.3
 Imports:
     desc,
     jsonlite,
-    cli,
-    httr
+    cli
 Suggests:
     tinytest,
     withr,

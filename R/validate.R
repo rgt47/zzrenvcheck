@@ -1,5 +1,30 @@
 # Package Source Validation Functions
-# Port from validation.sh lines 80-106
+
+#' Fetch URL as Text
+#'
+#' Downloads a URL and returns the body as a character string.
+#' Returns NULL on any error or non-zero HTTP status.
+#'
+#' @param url Character. URL to fetch.
+#' @param timeout Integer. Seconds before timeout. Default: 10.
+#' @param headers Named character vector. Extra HTTP headers. Default: NULL.
+#'
+#' @return Character string of response body, or NULL on failure.
+#'
+#' @keywords internal
+http_get_text <- function(url, timeout = 10, headers = NULL) {
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  old <- options(timeout = timeout)
+  on.exit(options(old), add = TRUE)
+  status <- tryCatch(
+    download.file(url, tmp, quiet = TRUE, headers = headers,
+                  method = "libcurl"),
+    error = function(e) 1L
+  )
+  if (!identical(status, 0L)) return(NULL)
+  paste(readLines(tmp, warn = FALSE), collapse = "\n")
+}
 
 #' Fetch CRAN Package Information
 #'
@@ -11,26 +36,12 @@
 #'
 #' @keywords internal
 fetch_cran_info <- function(package) {
-
-
- url <- paste0("https://crandb.r-pkg.org/", package)
-
- tryCatch({
-
-   resp <- httr::GET(url, httr::timeout(10))
-
-   if (httr::http_error(resp)) {
-     return(NULL)
-   }
-
-   content <- httr::content(resp, as = "text", encoding = "UTF-8")
-   pkg_info <- jsonlite::fromJSON(content)
-
-   pkg_info
-
- }, error = function(e) {
-   NULL
- })
+  url <- paste0("https://crandb.r-pkg.org/", package)
+  tryCatch({
+    content <- http_get_text(url, timeout = 10)
+    if (is.null(content)) return(NULL)
+    jsonlite::fromJSON(content)
+  }, error = function(e) NULL)
 }
 
 #' Validate Package on CRAN
@@ -51,36 +62,22 @@ validate_cran <- function(package) {
 #' Queries the Bioconductor API for package metadata.
 #'
 #' @param package Character. Package name.
-#' @param version Character. Bioconductor version. Default: "3.19".
+#' @param version Character. Bioconductor version. Default: "3.21".
 #'
 #' @return List with package information, or NULL if not found
 #'
 #' @keywords internal
 fetch_bioc_info <- function(package, version = "3.21") {
-
- url <- paste0(
-   "https://bioconductor.org/packages/json/", version, "/bioc/packages.json"
- )
-
- tryCatch({
-   resp <- httr::GET(url, httr::timeout(15))
-
-   if (httr::http_error(resp)) {
-     return(NULL)
-   }
-
-   content <- httr::content(resp, as = "text", encoding = "UTF-8")
-   all_packages <- jsonlite::fromJSON(content)
-
-   if (package %in% names(all_packages)) {
-     return(all_packages[[package]])
-   }
-
-   NULL
-
- }, error = function(e) {
-   NULL
- })
+  url <- paste0(
+    "https://bioconductor.org/packages/json/", version, "/bioc/packages.json"
+  )
+  tryCatch({
+    content <- http_get_text(url, timeout = 15)
+    if (is.null(content)) return(NULL)
+    all_packages <- jsonlite::fromJSON(content)
+    if (package %in% names(all_packages)) return(all_packages[[package]])
+    NULL
+  }, error = function(e) NULL)
 }
 
 #' Validate Package on Bioconductor
@@ -106,25 +103,12 @@ validate_bioconductor <- function(package) {
 #'
 #' @keywords internal
 validate_github <- function(package) {
-
- if (!grepl("/", package)) {
-   return(FALSE)
- }
-
- url <- paste0("https://api.github.com/repos/", package)
-
- tryCatch({
-   resp <- httr::GET(
-     url,
-     httr::timeout(10),
-     httr::add_headers("User-Agent" = "zzrenvcheck")
-   )
-
-   !httr::http_error(resp)
-
- }, error = function(e) {
-   FALSE
- })
+  if (!grepl("/", package)) return(FALSE)
+  url <- paste0("https://api.github.com/repos/", package)
+  !is.null(
+    http_get_text(url, timeout = 10,
+                  headers = c("User-Agent" = "zzrenvcheck"))
+  )
 }
 
 #' Check if Package is Installable

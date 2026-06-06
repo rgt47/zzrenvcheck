@@ -230,9 +230,8 @@ add_github_to_renv_lock <- function(package, remote, path = ".") {
     username, "/", repo, "/", ref, "/DESCRIPTION"
   )
   tryCatch({
-    resp <- httr::GET(desc_url, httr::timeout(10))
-    if (!httr::http_error(resp)) {
-      content <- httr::content(resp, as = "text", encoding = "UTF-8")
+    content <- http_get_text(desc_url, timeout = 10)
+    if (!is.null(content)) {
       ver_match <- regmatches(
         content,
         regexpr("Version:\\s*([0-9][0-9.]*)", content, perl = TRUE)
