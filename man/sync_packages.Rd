@@ -4,7 +4,13 @@
 \alias{sync_packages}
 \title{Sync Packages to Code}
 \usage{
-sync_packages(strict = TRUE, path = ".", verbose = FALSE, dry_run = FALSE)
+sync_packages(
+  strict = TRUE,
+  path = ".",
+  verbose = FALSE,
+  dry_run = FALSE,
+  transitive = FALSE
+)
 }
 \arguments{
 \item{strict}{Logical. If TRUE, scans tests/ and vignettes/. Default: TRUE.}

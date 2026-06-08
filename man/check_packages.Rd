@@ -10,6 +10,7 @@ check_packages(
   cleanup = FALSE,
   verbose = TRUE,
   validate_sources = auto_fix,
+  transitive = FALSE,
   path = "."
 )
 }

@@ -4,7 +4,7 @@
 \alias{handle_auto_fix_lock}
 \title{Handle Auto-Fix for renv.lock}
 \usage{
-handle_auto_fix_lock(packages, path = ".")
+handle_auto_fix_lock(packages, path = ".", transitive = FALSE)
 }
 \arguments{
 \item{packages}{Character vector of package names to add.}

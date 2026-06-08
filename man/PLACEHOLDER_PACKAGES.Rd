@@ -5,7 +5,7 @@
 \alias{PLACEHOLDER_PACKAGES}
 \title{Placeholder Package Names}
 \format{
-An object of class \code{character} of length 24.
+An object of class \code{character} of length 25.
 }
 \usage{
 PLACEHOLDER_PACKAGES

@@ -4,7 +4,7 @@
 \alias{fix_packages}
 \title{Fix Packages (Convenience Wrapper)}
 \usage{
-fix_packages(strict = TRUE, path = ".")
+fix_packages(strict = TRUE, transitive = FALSE, path = ".")
 }
 \arguments{
 \item{strict}{Logical. If TRUE, scans tests/ and vignettes/ directories.
@@ -23,6 +23,9 @@ This is a convenience wrapper around check_packages(auto_fix = TRUE).
 \dontrun{
 # Fix all missing packages
 fix_packages()
+
+# Fix with transitive dependency resolution
+fix_packages(transitive = TRUE)
 
 # Fix with non-strict mode
 fix_packages(strict = FALSE)

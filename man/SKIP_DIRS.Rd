@@ -5,7 +5,7 @@
 \alias{SKIP_DIRS}
 \title{Directories to Skip During Scanning}
 \format{
-An object of class \code{character} of length 3.
+An object of class \code{character} of length 4.
 }
 \usage{
 SKIP_DIRS

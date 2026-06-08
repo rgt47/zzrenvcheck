@@ -4,12 +4,12 @@
 \alias{fetch_bioc_info}
 \title{Fetch Bioconductor Package Information}
 \usage{
-fetch_bioc_info(package, version = "3.19")
+fetch_bioc_info(package, version = "3.21")
 }
 \arguments{
 \item{package}{Character. Package name.}
 
-\item{version}{Character. Bioconductor version. Default: "3.19".}
+\item{version}{Character. Bioconductor version. Default: "3.21".}
 }
 \value{
 List with package information, or NULL if not found

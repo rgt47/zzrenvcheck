@@ -4,7 +4,12 @@
 \alias{handle_auto_fix_lock_with_validation}
 \title{Handle Auto-Fix for renv.lock with Source Validation}
 \usage{
-handle_auto_fix_lock_with_validation(packages, path, verbose)
+handle_auto_fix_lock_with_validation(
+  packages,
+  path,
+  verbose,
+  transitive = FALSE
+)
 }
 \arguments{
 \item{packages}{Character vector of package names.}
