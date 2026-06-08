@@ -40,6 +40,7 @@ check_packages <- function(strict = TRUE,
                            cleanup = FALSE,
                            verbose = TRUE,
                            validate_sources = auto_fix,
+                           transitive = FALSE,
                            path = ".") {
 
   if (cleanup) {
@@ -148,12 +149,12 @@ check_packages <- function(strict = TRUE,
 
     if (validate_sources && auto_fix) {
       validation_result <- handle_auto_fix_lock_with_validation(
-        missing_in_lock, path, verbose
+        missing_in_lock, path, verbose, transitive = transitive
       )
       result$installable <- validation_result$installable
       result$non_installable <- validation_result$non_installable
     } else if (auto_fix) {
-      handle_auto_fix_lock(missing_in_lock, path)
+      handle_auto_fix_lock(missing_in_lock, path, transitive = transitive)
     } else {
       if (verbose) {
         cli::cli_ul(missing_in_lock)
@@ -205,7 +206,8 @@ check_packages <- function(strict = TRUE,
 #' @return List with installable and non_installable character vectors
 #'
 #' @keywords internal
-handle_auto_fix_lock_with_validation <- function(packages, path, verbose) {
+handle_auto_fix_lock_with_validation <- function(packages, path, verbose,
+                                                  transitive = FALSE) {
 
   cli::cli_h3("Validating Package Sources")
   cli::cli_alert_info("Checking {length(packages)} package{?s}...")
@@ -228,19 +230,24 @@ handle_auto_fix_lock_with_validation <- function(packages, path, verbose) {
     }
 
     cli::cli_h3("Auto-Fixing renv.lock")
-    failed <- character(0)
 
-    for (pkg in installable) {
-      success <- add_to_renv_lock(pkg, path = path)
-      if (!success) {
-        failed <- c(failed, pkg)
-      }
-    }
-
-    if (length(failed) == 0) {
-      cli::cli_alert_success("All installable packages added to renv.lock")
+    if (transitive) {
+      add_with_deps_to_renv_lock(installable, path = path)
     } else {
-      cli::cli_alert_danger("Failed to add: {.pkg {failed}}")
+      failed <- character(0)
+
+      for (pkg in installable) {
+        success <- add_to_renv_lock(pkg, path = path)
+        if (!success) {
+          failed <- c(failed, pkg)
+        }
+      }
+
+      if (length(failed) == 0) {
+        cli::cli_alert_success("All installable packages added to renv.lock")
+      } else {
+        cli::cli_alert_danger("Failed to add: {.pkg {failed}}")
+      }
     }
   }
 

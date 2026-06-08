@@ -46,9 +46,27 @@ handle_auto_fix_description <- function(packages, path = ".") {
 #' @return Character vector of packages that failed to add
 #'
 #' @keywords internal
-handle_auto_fix_lock <- function(packages, path = ".") {
+handle_auto_fix_lock <- function(packages, path = ".", transitive = FALSE) {
 
   cli::cli_h3("Auto-Fixing renv.lock")
+
+  if (transitive) {
+    cli::cli_alert_info(
+      "Resolving transitive dependencies for {length(packages)} package{?s}..."
+    )
+    success <- add_with_deps_to_renv_lock(packages, path = path)
+    if (success) {
+      cli::cli_text("")
+      cli::cli_h3("Next Steps")
+      cli::cli_ol(c(
+        "Review changes: git diff DESCRIPTION renv.lock",
+        "Commit: git add DESCRIPTION renv.lock && git commit -m 'Add packages'",
+        "Rebuild Docker: make docker-build"
+      ))
+    }
+    return(invisible(character(0)))
+  }
+
   cli::cli_alert_info("Adding {length(packages)} package{?s} to renv.lock...")
 
   failed <- character(0)
@@ -281,6 +299,157 @@ add_github_to_renv_lock <- function(package, remote, path = ".") {
   })
 }
 
+#' Resolve Transitive Package Dependencies
+#'
+#' Resolves the full transitive dependency closure for a set of packages
+#' using the CRAN package database. Returns all packages (direct and
+#' transitive) with their current CRAN versions.
+#'
+#' Non-CRAN packages (GitHub, Bioconductor) are skipped with a warning;
+#' their transitive CRAN dependencies are still resolved where possible.
+#'
+#' @param packages Character vector of package names.
+#' @param db Matrix. Result of \code{available.packages()}. If NULL,
+#'   fetched from CRAN (one network round-trip).
+#' @param which Character vector. Dependency types to follow.
+#'   Default: \code{c("Imports", "Depends", "LinkingTo")}.
+#'   "Suggests" is excluded by default as suggested packages are optional.
+#'
+#' @return Named character vector: names are package names, values are
+#'   versions. Only includes packages available on CRAN.
+#'
+#' @examples
+#' \dontrun{
+#' # Resolve all transitive deps of ggplot2
+#' resolve_transitive_deps("ggplot2")
+#'
+#' # Reuse a pre-fetched database for multiple calls
+#' db <- available.packages()
+#' resolve_transitive_deps(c("dplyr", "tidyr"), db = db)
+#' }
+#'
+#' @export
+resolve_transitive_deps <- function(packages,
+                                    db = NULL,
+                                    which = c("Imports", "Depends",
+                                              "LinkingTo")) {
+  if (is.null(db)) {
+    cli::cli_alert_info("Fetching CRAN package database...")
+    db <- available.packages()
+  }
+
+  cran_pkgs <- packages[packages %in% rownames(db)]
+  not_cran <- setdiff(packages, cran_pkgs)
+
+  if (length(not_cran) > 0) {
+    cli::cli_alert_warning(
+      paste0(
+        "Skipping non-CRAN packages for transitive resolution: ",
+        "{.pkg {not_cran}}"
+      )
+    )
+  }
+
+  if (length(cran_pkgs) == 0) {
+    return(setNames(character(0), character(0)))
+  }
+
+  dep_list <- tools::package_dependencies(
+    packages = cran_pkgs,
+    db = db,
+    which = which,
+    recursive = TRUE
+  )
+
+  all_names <- unique(c(cran_pkgs, unlist(dep_list, use.names = FALSE)))
+  all_names <- setdiff(all_names, c(BASE_PACKAGES, "R"))
+  all_names <- intersect(all_names, rownames(db))
+
+  versions <- db[all_names, "Version"]
+  names(versions) <- all_names
+  versions
+}
+
+#' Add Packages to renv.lock with Transitive Dependencies
+#'
+#' Resolves the full dependency closure for the given packages and adds
+#' all of them (direct and transitive) to renv.lock. Existing entries
+#' are overwritten with current CRAN versions.
+#'
+#' @param packages Character vector of package names.
+#' @param path Character. Path to project root. Default: current directory.
+#' @param db Matrix. Result of \code{available.packages()}. If NULL,
+#'   fetched from CRAN. Pass a pre-fetched db to avoid redundant network
+#'   calls when adding multiple package sets.
+#'
+#' @return Invisible logical indicating success.
+#'
+#' @examples
+#' \dontrun{
+#' add_with_deps_to_renv_lock(c("ggplot2", "dplyr"))
+#' }
+#'
+#' @export
+add_with_deps_to_renv_lock <- function(packages, path = ".", db = NULL) {
+  lock_file <- file.path(path, "renv.lock")
+
+  if (!file.exists(lock_file)) {
+    cli::cli_alert_danger("renv.lock not found at {.path {lock_file}}")
+    return(invisible(FALSE))
+  }
+
+  if (is.null(db)) {
+    cli::cli_alert_info("Fetching CRAN package database...")
+    db <- available.packages()
+  }
+
+  versions <- resolve_transitive_deps(packages, db = db)
+
+  if (length(versions) == 0) {
+    cli::cli_alert_warning("No CRAN packages resolved")
+    return(invisible(FALSE))
+  }
+
+  tryCatch({
+    lock_data <- jsonlite::fromJSON(lock_file, simplifyVector = FALSE)
+
+    if (is.null(lock_data$Packages)) {
+      lock_data$Packages <- list()
+    }
+
+    for (pkg in names(versions)) {
+      lock_data$Packages[[pkg]] <- list(
+        Package = pkg,
+        Version = unname(versions[[pkg]]),
+        Source = "Repository",
+        Repository = "CRAN"
+      )
+    }
+
+    jsonlite::write_json(
+      lock_data,
+      lock_file,
+      pretty = TRUE,
+      auto_unbox = TRUE
+    )
+
+    n_direct <- length(packages)
+    n_total <- length(versions)
+    n_transitive <- n_total - sum(packages %in% names(versions))
+    cli::cli_alert_success(
+      paste0(
+        "Added {n_total} package{?s} to renv.lock ",
+        "({n_direct} direct, {n_transitive} transitive)"
+      )
+    )
+    invisible(TRUE)
+
+  }, error = function(e) {
+    cli::cli_alert_danger("Failed to update renv.lock: {e$message}")
+    invisible(FALSE)
+  })
+}
+
 #' Fix Packages (Convenience Wrapper)
 #'
 #' Automatically adds missing packages to DESCRIPTION and renv.lock.
@@ -295,11 +464,15 @@ add_github_to_renv_lock <- function(package, remote, path = ".") {
 #' # Fix all missing packages
 #' fix_packages()
 #'
+#' # Fix with transitive dependency resolution
+#' fix_packages(transitive = TRUE)
+#'
 #' # Fix with non-strict mode
 #' fix_packages(strict = FALSE)
 #' }
 #'
 #' @export
-fix_packages <- function(strict = TRUE, path = ".") {
-  check_packages(strict = strict, auto_fix = TRUE, path = path)
+fix_packages <- function(strict = TRUE, transitive = FALSE, path = ".") {
+  check_packages(strict = strict, auto_fix = TRUE, transitive = transitive,
+                 path = path)
 }

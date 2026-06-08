@@ -40,7 +40,8 @@
 sync_packages <- function(strict = TRUE,
                           path = ".",
                           verbose = FALSE,
-                          dry_run = FALSE) {
+                          dry_run = FALSE,
+                          transitive = FALSE) {
 
   cli::cli_h1("Sync Packages to Code")
 
@@ -79,8 +80,18 @@ sync_packages <- function(strict = TRUE,
 
   to_add_desc <- setdiff(code_packages, desc_packages)
   to_remove_desc <- setdiff(desc_packages, c(code_packages, "renv"))
-  to_add_lock <- setdiff(code_packages, renv_packages)
-  to_remove_lock <- setdiff(renv_packages, c(code_packages, "renv"))
+
+  if (transitive && has_renv_lock(path) && length(code_packages) > 0) {
+    db <- available.packages()
+    resolved <- resolve_transitive_deps(code_packages, db = db)
+    resolved_names <- names(resolved)
+    to_add_lock <- setdiff(resolved_names, renv_packages)
+    to_remove_lock <- setdiff(renv_packages, c(resolved_names, "renv"))
+  } else {
+    db <- NULL
+    to_add_lock <- setdiff(code_packages, renv_packages)
+    to_remove_lock <- setdiff(renv_packages, c(code_packages, "renv"))
+  }
 
   changes <- list(
     added_to_description = character(0),
@@ -124,14 +135,19 @@ sync_packages <- function(strict = TRUE,
       cli::cli_alert_info("Adding {length(to_add_lock)} package{?s}")
 
       if (!dry_run) {
-        for (pkg in to_add_lock) {
-          success <- add_to_renv_lock(pkg, path = path)
-          if (success) {
-            changes$added_to_lock <- c(changes$added_to_lock, pkg)
-          } else {
-            cli::cli_alert_warning(
-              "Could not add {.pkg {pkg}} to renv.lock (not on CRAN?)"
-            )
+        if (transitive) {
+          add_with_deps_to_renv_lock(to_add_lock, path = path, db = db)
+          changes$added_to_lock <- to_add_lock
+        } else {
+          for (pkg in to_add_lock) {
+            success <- add_to_renv_lock(pkg, path = path)
+            if (success) {
+              changes$added_to_lock <- c(changes$added_to_lock, pkg)
+            } else {
+              cli::cli_alert_warning(
+                "Could not add {.pkg {pkg}} to renv.lock (not on CRAN?)"
+              )
+            }
           }
         }
       }

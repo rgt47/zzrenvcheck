@@ -104,6 +104,72 @@ if (not_on_cran) local({
   expect_true('ggplot2' %in% imports, info = 'ggplot2 retained in imports')
 })
 
+# resolve_transitive_deps returns named character vector
+if (not_on_cran) local({
+  result <- resolve_transitive_deps('cli')
+  expect_true(is.character(result), info = 'result is character')
+  expect_true(!is.null(names(result)), info = 'result has names')
+  expect_true('cli' %in% names(result), info = 'direct package included')
+  expect_true(length(result) >= 1L, info = 'at least the direct package returned')
+  expect_true(all(nchar(result) > 0), info = 'all versions non-empty')
+})
+
+# resolve_transitive_deps includes transitive deps
+if (not_on_cran) local({
+  result <- resolve_transitive_deps('ggplot2')
+  expect_true('ggplot2' %in% names(result), info = 'ggplot2 direct dep present')
+  expect_true('rlang' %in% names(result), info = 'rlang transitive dep present')
+  expect_true('scales' %in% names(result), info = 'scales transitive dep present')
+})
+
+# resolve_transitive_deps skips non-CRAN packages
+if (not_on_cran) local({
+  result <- resolve_transitive_deps(c('cli', 'NonExistentPkg12345xyz'))
+  expect_true('cli' %in% names(result), info = 'CRAN package resolved')
+  expect_false('NonExistentPkg12345xyz' %in% names(result),
+               info = 'non-CRAN package excluded')
+})
+
+# resolve_transitive_deps returns empty for all non-CRAN input
+if (not_on_cran) local({
+  result <- resolve_transitive_deps('NonExistentPkg12345xyz')
+  expect_equal(length(result), 0L, info = 'empty result for non-CRAN only input')
+})
+
+# resolve_transitive_deps reuses provided db
+if (not_on_cran) local({
+  db <- available.packages()
+  result <- resolve_transitive_deps('cli', db = db)
+  expect_true('cli' %in% names(result), info = 'works with provided db')
+})
+
+# add_with_deps_to_renv_lock adds direct and transitive packages
+if (not_on_cran) local({
+  temp_dir <- withr::local_tempdir()
+  create_renv_lock(r_version = '4.4.0', path = temp_dir)
+  success <- add_with_deps_to_renv_lock('cli', path = temp_dir)
+  expect_true(success, info = 'add_with_deps returns TRUE')
+  lock_data <- jsonlite::fromJSON(
+    file.path(temp_dir, 'renv.lock'),
+    simplifyVector = FALSE
+  )
+  expect_true('cli' %in% names(lock_data$Packages),
+              info = 'cli direct dep in lockfile')
+  expect_true(length(lock_data$Packages) >= 1L,
+              info = 'at least one package in lockfile')
+  cli_entry <- lock_data$Packages[['cli']]
+  expect_equal(cli_entry$Source, 'Repository', info = 'Source is Repository')
+  expect_equal(cli_entry$Repository, 'CRAN', info = 'Repository is CRAN')
+  expect_true(nchar(cli_entry$Version) > 0, info = 'Version non-empty')
+})
+
+# add_with_deps_to_renv_lock handles missing renv.lock
+if (not_on_cran) local({
+  temp_dir <- withr::local_tempdir()
+  success <- add_with_deps_to_renv_lock('cli', path = temp_dir)
+  expect_false(success, info = 'returns FALSE when renv.lock missing')
+})
+
 # sync_packages dry_run does not modify files
 if (not_on_cran) local({
   temp_dir <- withr::local_tempdir()
