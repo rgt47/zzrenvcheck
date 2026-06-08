@@ -5,7 +5,7 @@ Queries the Bioconductor API for package metadata.
 ## Usage
 
 ``` r
-fetch_bioc_info(package, version = "3.19")
+fetch_bioc_info(package, version = "3.21")
 ```
 
 ## Arguments
@@ -16,7 +16,7 @@ fetch_bioc_info(package, version = "3.19")
 
 - version:
 
-  Character. Bioconductor version. Default: "3.19".
+  Character. Bioconductor version. Default: "3.21".
 
 ## Value
 

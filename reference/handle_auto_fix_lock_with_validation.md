@@ -6,7 +6,12 @@ Separates installable from non-installable packages.
 ## Usage
 
 ``` r
-handle_auto_fix_lock_with_validation(packages, path, verbose)
+handle_auto_fix_lock_with_validation(
+  packages,
+  path,
+  verbose,
+  transitive = FALSE
+)
 ```
 
 ## Arguments

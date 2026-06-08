@@ -2,6 +2,10 @@
 
 ## All functions
 
+- [`add_github_to_renv_lock()`](https://rgt47.github.io/zzrenvcheck/reference/add_github_to_renv_lock.md)
+  : Add GitHub Package to renv.lock
+- [`add_with_deps_to_renv_lock()`](https://rgt47.github.io/zzrenvcheck/reference/add_with_deps_to_renv_lock.md)
+  : Add Packages to renv.lock with Transitive Dependencies
 - [`check_installable()`](https://rgt47.github.io/zzrenvcheck/reference/check_installable.md)
   : Check Multiple Packages for Installability
 - [`check_packages()`](https://rgt47.github.io/zzrenvcheck/reference/check_packages.md)
@@ -28,5 +32,7 @@
   : Remove Packages from renv.lock
 - [`report_packages()`](https://rgt47.github.io/zzrenvcheck/reference/report_packages.md)
   : Report Package Status
+- [`resolve_transitive_deps()`](https://rgt47.github.io/zzrenvcheck/reference/resolve_transitive_deps.md)
+  : Resolve Transitive Package Dependencies
 - [`sync_packages()`](https://rgt47.github.io/zzrenvcheck/reference/sync_packages.md)
   : Sync Packages to Code

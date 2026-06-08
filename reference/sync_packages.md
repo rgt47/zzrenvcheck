@@ -7,7 +7,13 @@ removes unused packages.
 ## Usage
 
 ``` r
-sync_packages(strict = TRUE, path = ".", verbose = FALSE, dry_run = FALSE)
+sync_packages(
+  strict = TRUE,
+  path = ".",
+  verbose = FALSE,
+  dry_run = FALSE,
+  transitive = FALSE
+)
 ```
 
 ## Arguments

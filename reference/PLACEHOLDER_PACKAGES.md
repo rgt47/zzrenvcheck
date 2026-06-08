@@ -12,4 +12,4 @@ PLACEHOLDER_PACKAGES
 
 ## Format
 
-An object of class `character` of length 24.
+An object of class `character` of length 25.

@@ -10,4 +10,4 @@ SKIP_DIRS
 
 ## Format
 
-An object of class `character` of length 3.
+An object of class `character` of length 4.

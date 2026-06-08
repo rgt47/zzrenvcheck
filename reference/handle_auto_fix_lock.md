@@ -7,7 +7,7 @@ source checking.
 ## Usage
 
 ``` r
-handle_auto_fix_lock(packages, path = ".")
+handle_auto_fix_lock(packages, path = ".", transitive = FALSE)
 ```
 
 ## Arguments

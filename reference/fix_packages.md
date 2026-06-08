@@ -6,7 +6,7 @@ is a convenience wrapper around check_packages(auto_fix = TRUE).
 ## Usage
 
 ``` r
-fix_packages(strict = TRUE, path = ".")
+fix_packages(strict = TRUE, transitive = FALSE, path = ".")
 ```
 
 ## Arguments
@@ -30,6 +30,9 @@ Invisibly returns a list with packages that were added
 if (FALSE) { # \dontrun{
 # Fix all missing packages
 fix_packages()
+
+# Fix with transitive dependency resolution
+fix_packages(transitive = TRUE)
 
 # Fix with non-strict mode
 fix_packages(strict = FALSE)
