@@ -1,6 +1,6 @@
 Package: zzrenvcheck
 Title: Validate R Package Dependencies for Reproducibility
-Version: 0.3.1
+Version: 0.3.2
 Authors@R:
     person("Ronald (Ryy) G", "Thomas", , "rgthomas@ucsd.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-1686-4965"))
@@ -11,7 +11,6 @@ Description: Validates that all R packages used in source code are properly
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Imports:
     desc,
     jsonlite,
@@ -25,3 +24,4 @@ Suggests:
 VignetteBuilder: knitr
 URL: https://github.com/rgt47/zzrenvcheck
 BugReports: https://github.com/rgt47/zzrenvcheck/issues
+Config/roxygen2/version: 8.0.0
