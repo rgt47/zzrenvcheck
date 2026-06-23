@@ -8,7 +8,3 @@ dependencies (often contain example code).
 ``` r
 SKIP_FILES
 ```
-
-## Format
-
-An object of class `character` of length 3.

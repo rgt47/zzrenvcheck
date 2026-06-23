@@ -7,7 +7,3 @@ R source file extensions to scan for package references.
 ``` r
 FILE_EXTENSIONS
 ```
-
-## Format
-
-An object of class `character` of length 4.

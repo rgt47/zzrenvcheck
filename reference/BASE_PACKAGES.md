@@ -8,7 +8,3 @@ These packages are always available in R installations.
 ``` r
 BASE_PACKAGES
 ```
-
-## Format
-
-An object of class `character` of length 10.

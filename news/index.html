@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,10 +37,18 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.2" id="zzrenvcheck-v032">zzrenvcheck v0.3.2<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v032"></a></h2>
+<ul><li>Fixed <code><a href="../reference/check_packages.html">check_packages()</a></code> and <code><a href="../reference/sync_packages.html">sync_packages()</a></code> adding the workspace’s own package to its DESCRIPTION Imports when a report calls <code>library(&lt;own_pkg&gt;)</code>. A package can no longer be made to depend on itself (a self-cycle that <code>R CMD check</code> rejects).</li>
+<li>Fixed a crash in <code><a href="../reference/check_installable.html">check_installable()</a></code> when reporting progress (‘Cannot find current progress bar’); the progress-bar id is now passed explicitly.</li>
+<li>Network-dependent tests now also require a configured CRAN mirror, so <code>R CMD check</code> no longer errors when run without one.</li>
+<li>Documented the <code>transitive</code> argument and added the missing <code>utils</code> and <code>stats</code> imports. <code>R CMD check</code> passes with no errors, warnings, or notes.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="zzrenvcheck-v030">zzrenvcheck v0.3.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v030"></a></h2>
 <ul><li>Initial public release.</li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

@@ -35,6 +35,11 @@ sync_packages(
   Logical. If TRUE, only report changes without making them. Default:
   FALSE.
 
+- transitive:
+
+  Logical. If TRUE, also resolve and add transitive dependencies to
+  renv.lock. Default: FALSE.
+
 ## Value
 
 Invisibly returns a list with changes made

@@ -9,7 +9,7 @@ This is a convenience wrapper around check_packages(auto_fix = TRUE)."><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,11 @@ This is a convenience wrapper around check_packages(auto_fix = TRUE).</p>
 <dl><dt id="arg-strict">strict<a class="anchor" aria-label="anchor" href="#arg-strict"></a></dt>
 <dd><p>Logical. If TRUE, scans tests/ and vignettes/ directories.
 Default: TRUE.</p></dd>
+
+
+<dt id="arg-transitive">transitive<a class="anchor" aria-label="anchor" href="#arg-transitive"></a></dt>
+<dd><p>Logical. If TRUE, also resolve and add transitive
+dependencies when fixing renv.lock. Default: FALSE.</p></dd>
 
 
 <dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>

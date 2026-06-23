@@ -7,7 +7,3 @@ Default directories scanned in standard (non-strict) mode.
 ``` r
 STANDARD_DIRS
 ```
-
-## Format
-
-An object of class `character` of length 4.

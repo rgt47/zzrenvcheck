@@ -50,6 +50,7 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_all_deps.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_declared.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_imports.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_package_name.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_renv_lock.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/remove_from_description.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/remove_from_renv_lock.html</loc></url>

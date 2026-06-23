@@ -7,7 +7,3 @@ Directory patterns to exclude from package scanning.
 ``` r
 SKIP_DIRS
 ```
-
-## Format
-
-An object of class `character` of length 4.

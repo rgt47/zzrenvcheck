@@ -7,7 +7,3 @@ All directories scanned in strict mode (includes tests and vignettes).
 ``` r
 STRICT_DIRS
 ```
-
-## Format
-
-An object of class `character` of length 7.

@@ -9,7 +9,3 @@ real package references.
 ``` r
 PLACEHOLDER_PACKAGES
 ```
-
-## Format
-
-An object of class `character` of length 25.

@@ -16,6 +16,11 @@ fix_packages(strict = TRUE, transitive = FALSE, path = ".")
   Logical. If TRUE, scans tests/ and vignettes/ directories. Default:
   TRUE.
 
+- transitive:
+
+  Logical. If TRUE, also resolve and add transitive dependencies when
+  fixing renv.lock. Default: FALSE.
+
 - path:
 
   Character. Path to project root. Default: current directory.
