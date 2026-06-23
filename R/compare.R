@@ -15,6 +15,8 @@
 #' @param verbose Logical. If TRUE, lists all issues found. Default: TRUE.
 #' @param validate_sources Logical. If TRUE, checks if packages are installable
 #'   from CRAN/Bioconductor/GitHub before adding. Default: TRUE when auto_fix.
+#' @param transitive Logical. If TRUE, also resolve and add transitive
+#'   dependencies when fixing renv.lock. Default: FALSE.
 #' @param path Character. Path to project root. Default: current directory.
 #'
 #' @return Invisibly returns a list with validation results

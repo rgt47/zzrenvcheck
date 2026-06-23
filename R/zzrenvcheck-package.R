@@ -24,6 +24,8 @@
 #' }
 #'
 #' @keywords internal
+#' @importFrom utils available.packages download.file
+#' @importFrom stats setNames
 "_PACKAGE"
 
 ## usethis namespace: start

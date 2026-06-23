@@ -1,9 +1,13 @@
 # Tests for Package Source Validation Functions
 
-# Equivalent of skip_on_cran() + skip_if_offline(): both gates collapse
-# to "only run when not on CRAN", since dev/CI environments where
-# NOT_CRAN=true are also where network probing is acceptable.
-not_on_cran <- identical(Sys.getenv('NOT_CRAN'), 'true')
+# Skip network tests unless NOT_CRAN is set AND a real CRAN mirror is
+# configured. R CMD check sets NOT_CRAN=true without a mirror (repos
+# CRAN = '@CRAN@'); the mirror check stops the CRAN/Bioc/GitHub probes
+# from erroring under check while still running them in dev/CI.
+not_on_cran <- identical(Sys.getenv('NOT_CRAN'), 'true') &&
+  !is.null(getOption('repos')[['CRAN']]) &&
+  nzchar(getOption('repos')[['CRAN']]) &&
+  !identical(unname(getOption('repos')[['CRAN']]), '@CRAN@')
 
 # is_installable returns correct structure
 local({

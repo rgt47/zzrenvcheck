@@ -1,8 +1,13 @@
 # Tests for Sync Functions
 
-# Equivalent of testthat::skip_on_cran(): only run network/heavy tests
-# when NOT_CRAN is set, which is the standard CRAN-set guard.
-not_on_cran <- identical(Sys.getenv('NOT_CRAN'), 'true')
+# Run network/heavy tests only when NOT_CRAN is set AND a real CRAN mirror
+# is configured. R CMD check sets NOT_CRAN=true without a mirror (repos
+# CRAN = '@CRAN@'), so the mirror check is what stops available.packages()
+# from erroring under check while still running these tests in dev/CI.
+not_on_cran <- identical(Sys.getenv('NOT_CRAN'), 'true') &&
+  !is.null(getOption('repos')[['CRAN']]) &&
+  nzchar(getOption('repos')[['CRAN']]) &&
+  !identical(unname(getOption('repos')[['CRAN']]), '@CRAN@')
 
 # create_renv_lock creates valid JSON structure
 if (not_on_cran) local({
