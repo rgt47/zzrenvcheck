@@ -29,6 +29,9 @@ unused). Equivalent to calling sync_packages(). Default: FALSE.}
 \item{validate_sources}{Logical. If TRUE, checks if packages are installable
 from CRAN/Bioconductor/GitHub before adding. Default: TRUE when auto_fix.}
 
+\item{transitive}{Logical. If TRUE, also resolve and add transitive
+dependencies when fixing renv.lock. Default: FALSE.}
+
 \item{path}{Character. Path to project root. Default: current directory.}
 }
 \value{

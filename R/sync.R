@@ -8,6 +8,8 @@
 #' removes unused packages.
 #'
 #' @param strict Logical. If TRUE, scans tests/ and vignettes/. Default: TRUE.
+#' @param transitive Logical. If TRUE, also resolve and add transitive
+#'   dependencies to renv.lock. Default: FALSE.
 #' @param path Character. Path to project root. Default: current directory.
 #' @param verbose Logical. Show detailed output. Default: FALSE.
 #' @param dry_run Logical. If TRUE, only report changes without making them.

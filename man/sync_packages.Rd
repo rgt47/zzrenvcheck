@@ -21,6 +21,9 @@ sync_packages(
 
 \item{dry_run}{Logical. If TRUE, only report changes without making them.
 Default: FALSE.}
+
+\item{transitive}{Logical. If TRUE, also resolve and add transitive
+dependencies to renv.lock. Default: FALSE.}
 }
 \value{
 Invisibly returns a list with changes made

@@ -46,5 +46,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Ronald (Ryy) G Thomas \email{rgthomas@ucsd.edu} (\href{https://orcid.org/0000-0003-1686-4965}{ORCID})
 
+Authors:
+\itemize{
+  \item Ronald (Ryy) G Thomas \email{rgthomas@ucsd.edu} (\href{https://orcid.org/0000-0003-1686-4965}{ORCID})
+}
+
 }
 \keyword{internal}
