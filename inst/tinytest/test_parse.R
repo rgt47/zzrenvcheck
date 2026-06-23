@@ -31,3 +31,23 @@ local({
   writeLines('{}', lock_file)
   expect_true(zzrenvcheck:::has_renv_lock(temp_dir), info = 'has_renv_lock: file present')
 })
+
+# parse_description_package_name reads the Package field
+local({
+  temp_dir <- tempfile()
+  dir.create(temp_dir)
+  on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
+  expect_equal(
+    length(zzrenvcheck:::parse_description_package_name(temp_dir)), 0,
+    info = 'missing DESCRIPTION returns empty'
+  )
+  desc_file <- file.path(temp_dir, 'DESCRIPTION')
+  writeLines(c(
+    'Package: peng1',
+    'Version: 0.1.0'
+  ), desc_file)
+  expect_equal(
+    zzrenvcheck:::parse_description_package_name(temp_dir), 'peng1',
+    info = 'reads Package field'
+  )
+})

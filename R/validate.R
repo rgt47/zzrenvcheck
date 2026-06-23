@@ -202,12 +202,18 @@ check_installable <- function(packages,
    ))
  }
 
- if (progress) {
+ # Capture the bar id and pass it explicitly. cli scopes a progress bar to
+ # the frame that created it; cli_progress_update() called from the lapply()
+ # closure runs in a different environment and cannot find the bar by default
+ # ("Cannot find current progress bar"). The id makes the reference explicit.
+ pb <- if (progress) {
    cli::cli_progress_bar(
      "Validating packages",
      total = length(packages),
      clear = FALSE
    )
+ } else {
+   NULL
  }
 
  results <- lapply(packages, function(pkg) {
@@ -219,14 +225,14 @@ check_installable <- function(packages,
    )
 
    if (progress) {
-     cli::cli_progress_update()
+     cli::cli_progress_update(id = pb)
    }
 
    result
  })
 
  if (progress) {
-   cli::cli_progress_done()
+   cli::cli_progress_done(id = pb)
  }
 
  data.frame(

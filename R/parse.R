@@ -167,6 +167,36 @@ parse_description_declared <- function(path = ".") {
   })
 }
 
+#' Parse the Project's Own Package Name
+#'
+#' Reads the \code{Package:} field from DESCRIPTION. Analysis reports
+#' often call \code{library(<own_pkg>)} to load the workspace package
+#' itself; that self-reference must never be treated as a missing
+#' dependency, as a package cannot import itself.
+#'
+#' @param path Character. Path to project root.
+#'
+#' @return Character scalar package name, or \code{character(0)} if the
+#'   field is absent or unreadable.
+#'
+#' @keywords internal
+parse_description_package_name <- function(path = ".") {
+
+  desc_file <- file.path(path, "DESCRIPTION")
+
+  if (!file.exists(desc_file)) {
+    return(character(0))
+  }
+
+  tryCatch({
+    d <- desc::desc(desc_file)
+    name <- d$get_field("Package", default = NA_character_)
+    if (is.na(name) || !nzchar(name)) character(0) else name
+  }, error = function(e) {
+    character(0)
+  })
+}
+
 #' Check if DESCRIPTION Exists
 #'
 #' @param path Character. Path to project root.

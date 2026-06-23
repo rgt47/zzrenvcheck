@@ -64,6 +64,14 @@ sync_packages <- function(strict = TRUE,
 
   code_packages_raw <- extract_code_packages(dirs = dirs, path = path)
   code_packages <- clean_package_names(code_packages_raw)
+
+  # A package cannot depend on itself. Drop any library(<own_pkg>)
+  # self-reference so it is never added to DESCRIPTION or renv.lock.
+  own_pkg <- parse_description_package_name(path = path)
+  if (length(own_pkg) > 0) {
+    code_packages <- setdiff(code_packages, own_pkg)
+  }
+
   desc_packages <- parse_description_declared(path = path)
   renv_packages <- if (has_renv_lock(path)) {
     parse_renv_lock(path = path)
