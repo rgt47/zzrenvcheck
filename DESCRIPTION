@@ -10,6 +10,7 @@ Description: Validates that all R packages used in source code are properly
     and auto-fix capabilities through CRAN API integration.
 License: GPL (>= 3)
 Encoding: UTF-8
+Language: en-US
 Roxygen: list(markdown = TRUE)
 Imports:
     desc,
