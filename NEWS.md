@@ -1,5 +1,10 @@
 # zzrenvcheck v0.3.2
 
+* Added a vignette, 'renv vs zzrenvcheck', explaining how the two tools
+  differ and complement each other (`renv` manages the environment;
+  zzrenvcheck audits the code/DESCRIPTION/renv.lock declarations). `renv`
+  is now listed under Suggests for the vignette.
+
 * Fixed `check_packages()` and `sync_packages()` adding the workspace's
   own package to its DESCRIPTION Imports when a report calls
   `library(<own_pkg>)`. A package can no longer be made to depend on

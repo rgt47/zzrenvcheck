@@ -1,3 +1,5 @@
+^cran-comments\.md$
+^zzrenvcheck_.*\.tar\.gz$
 ^renv$
 ^renv\.lock$
 ^\.Rprofile$

@@ -20,7 +20,8 @@ Suggests:
     withr,
     fs,
     knitr,
-    rmarkdown
+    rmarkdown,
+    renv
 VignetteBuilder: knitr
 URL: https://github.com/rgt47/zzrenvcheck
 BugReports: https://github.com/rgt47/zzrenvcheck/issues
