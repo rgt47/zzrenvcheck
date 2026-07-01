@@ -881,6 +881,12 @@ Usage: validation.sh [OPTIONS]
 
 Validate R package dependencies (no R required on host).
 
+Checks that packages used in code are declared in DESCRIPTION and locked
+in renv.lock, and that their versions are consistent across DESCRIPTION
+constraints, renv.lock, and version-pinned installs in code (pak/renv
+'@' pins, install_version(), and the DESCRIPTION Remotes field). Exits
+non-zero when validation fails, including on a version conflict.
+
 OPTIONS:
     --strict           Scan all dirs including tests/vignettes [default]
     --no-strict        Scan only R/scripts/analysis
@@ -891,6 +897,8 @@ OPTIONS:
     --system-deps      Check Dockerfile for system deps
     --verbose, -v      Show package lists
     --help, -h         Show help
+
+Version consistency is always checked; jq is required for it.
 
 EXAMPLES:
     validation.sh                  # Full validation with auto-fix

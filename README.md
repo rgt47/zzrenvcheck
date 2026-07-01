@@ -71,6 +71,9 @@ The standalone version:
 - Uses only shell tools (grep, sed, awk, jq, curl)
 - Suitable for CI/CD pipelines
 - Can validate and auto-fix via CRAN API
+- Runs the same version-synchronization check as the R package
+  (DESCRIPTION vs renv.lock vs code pins) and exits non-zero on a
+  conflict, so `zzrenvcheck --no-fix` works as a CI gate
 
 ## Quick Start
 

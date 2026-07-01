@@ -150,6 +150,19 @@ refs (`pkg@>=1.6.0`, `pkg@last`, `pkg@current`), which do not pin an
 exact version; and pins split across multiple lines, because scanning is
 line-based.
 
+The standalone shell script performs the same version-consistency check
+on every run. It reports identical conflicts and exits non-zero when any
+are found, so no extra flag is required:
+
+```bash
+# Report-only validation, including version conflicts
+zzrenvcheck --no-fix
+
+# ── Version Conflicts ──
+# dplyr: code pin 1.2.0 != renv.lock 1.1.0; renv.lock 1.1.0 violates
+#   DESCRIPTION (>= 2.0.0)
+```
+
 ## Package Source Validation
 
 Check if packages exist on CRAN, Bioconductor, or GitHub:
@@ -198,9 +211,17 @@ For environments without R:
 cd zzrenvcheck
 ./install.sh --prefix ~/bin
 
-# Use anywhere
+# Report-only validation (mirrors check_packages(auto_fix = FALSE))
+zzrenvcheck --no-fix
+
+# Auto-fix, strict, verbose
 zzrenvcheck --fix --strict --verbose
 ```
+
+The shell script mirrors the R package: it detects missing and unused
+packages and runs the same version-consistency check across DESCRIPTION,
+`renv.lock`, and code pins. It exits non-zero when validation fails,
+which makes `zzrenvcheck --no-fix` a drop-in CI gate.
 
 Features:
 
