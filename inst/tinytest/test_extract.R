@@ -75,6 +75,22 @@ local({
   expect_true('ggplot2' %in% pkgs, info = '@import: ggplot2')
 })
 
+# find_r_files skips renv/ as a segment, not an ancestor substring
+local({
+  # Ancestor directory name contains 'renv' but is not a renv/ dir.
+  root <- file.path(tempfile(), 'zzrenvcheck_proj')
+  dir.create(file.path(root, 'R'), recursive = TRUE)
+  dir.create(file.path(root, 'renv'), recursive = TRUE)
+  on.exit(unlink(dirname(root), recursive = TRUE), add = TRUE)
+  writeLines('library(dplyr)', file.path(root, 'R', 'a.R'))
+  writeLines('library(skipme)', file.path(root, 'renv', 'activate.R'))
+  files <- zzrenvcheck:::find_r_files(c('R', 'renv'), root)
+  expect_true(any(grepl('a.R', files, fixed = TRUE)),
+              info = 'file under renv-named ancestor is kept')
+  expect_false(any(grepl('activate.R', files, fixed = TRUE)),
+               info = 'file inside renv/ segment is skipped')
+})
+
 # extract ignores commented code
 local({
   lines <- c(

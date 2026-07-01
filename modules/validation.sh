@@ -54,6 +54,8 @@ STANDARD_DIRS=("." "R" "scripts" "analysis")
 STRICT_DIRS=("." "R" "scripts" "analysis" "tests" "vignettes" "inst")
 SKIP_FILES=("*/README.Rmd" "*/README.md" "*/CLAUDE.md" "*/examples/*" "*/renv/*" "*/.git/*")
 FILE_EXTENSIONS=("R" "Rmd" "qmd" "Rnw")
+# Non-R files scanned for version pins only (never for plain names).
+REPRO_FILES=("Dockerfile" "install.sh" "Makefile" ".Rprofile")
 
 #==============================================================================
 # HELPERS
@@ -309,6 +311,47 @@ clean_packages() {
     printf '%s\n' "${cleaned[@]}" | sort -u
 }
 
+# Extract version-pinned installs from code. Mirrors the R function
+# extract_code_package_versions(). Recognises pak/renv @-syntax and the
+# version= argument of remotes/devtools install_version(). Emits one
+# "package version" line per pinned mention.
+extract_code_package_versions() {
+    local dirs=("$@")
+    local find_pattern="" exclude=""
+    for ext in "${FILE_EXTENSIONS[@]}"; do
+        [[ -n "$find_pattern" ]] && find_pattern="$find_pattern -o"
+        find_pattern="$find_pattern -name \"*.$ext\""
+    done
+    for skip in "${SKIP_FILES[@]}"; do exclude="$exclude ! -path '$skip'"; done
+
+    # Build the file list: scanned source files plus reproducibility
+    # files (Dockerfile, install.sh, ...) which carry pinned installs.
+    local files=()
+    while IFS= read -r file; do
+        [[ -n "$file" ]] && files+=("$file")
+    done < <(eval "find ${dirs[*]} -type f \( $find_pattern \) $exclude 2>/dev/null")
+    for rf in "${REPRO_FILES[@]}"; do
+        [[ -f "$rf" ]] && files+=("$rf")
+    done
+
+    for file in "${files[@]}"; do
+        [[ -f "$file" ]] || continue
+        local body; body=$(grep -v '^[[:space:]]*#' "$file" 2>/dev/null || true)
+        # @-syntax: on lines with a pak/renv install call, extract every
+        # 'pkg@version' token (handles vectors and multi-argument calls).
+        printf '%s\n' "$body" \
+            | grep -E "(pak::pak|pak::pkg_install|pak|renv::install)[[:space:]]*\(" 2>/dev/null \
+            | grep -oE "['\"][a-zA-Z][a-zA-Z0-9.]*@[0-9][a-zA-Z0-9.-]*['\"]" 2>/dev/null \
+            | sed -E "s/['\"]([a-zA-Z][a-zA-Z0-9.]*)@([0-9][a-zA-Z0-9.-]*)['\"]/\1 \2/" || true
+        # version= syntax: remotes/devtools install_version(). The
+        # package name may be named (package =) and the version may be
+        # named (version =) or positional.
+        printf '%s\n' "$body" \
+            | grep -oE "(remotes|devtools)::install_version[[:space:]]*\([[:space:]]*(package[[:space:]]*=[[:space:]]*)?['\"][a-zA-Z][a-zA-Z0-9.]*['\"][[:space:]]*,[[:space:]]*(version[[:space:]]*=[[:space:]]*)?['\"][0-9][a-zA-Z0-9.-]*['\"]" 2>/dev/null \
+            | sed -E "s/.*install_version[[:space:]]*\([[:space:]]*(package[[:space:]]*=[[:space:]]*)?['\"]([a-zA-Z][a-zA-Z0-9.]*)['\"][[:space:]]*,[[:space:]]*(version[[:space:]]*=[[:space:]]*)?['\"]([0-9][a-zA-Z0-9.-]*)['\"].*/\2 \4/" || true
+    done
+}
+
 #==============================================================================
 # DESCRIPTION/RENV PARSING
 #==============================================================================
@@ -336,15 +379,230 @@ parse_description_field() {
 parse_description_imports() { parse_description_field "Imports"; }
 parse_description_suggests() { parse_description_field "Suggests"; }
 
+# Emit "package version" lines for version-like Remotes pins. Mirrors
+# the R function parse_description_remotes(): a leading 'v' is stripped
+# and only digit-leading refs are kept (branches and SHAs are skipped).
+parse_description_remotes() {
+    [[ -f "DESCRIPTION" ]] || return 0
+    awk '
+    BEGIN { in_field=0; content="" }
+    /^Remotes:/ { in_field=1; content=$0; next }
+    in_field && /^[[:space:]]/ { content=content " " $0; next }
+    in_field && /^[A-Z]/ { in_field=0 }
+    END {
+        if (content) {
+            gsub("^Remotes:[[:space:]]*", "", content)
+            gsub(/,/, "\n", content)
+            print content
+        }
+    }
+    ' DESCRIPTION | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$' | \
+    while IFS= read -r remote; do
+        remote="${remote#*::}"
+        [[ "$remote" == *"@"* ]] || continue
+        local repo="${remote%@*}" ref="${remote##*@}"
+        local pkg="${repo##*/}"
+        ref="${ref#v}"; ref="${ref#V}"
+        [[ "$ref" =~ ^[0-9] ]] || continue
+        [[ -n "$pkg" ]] && printf '%s %s\n' "$pkg" "$ref"
+    done
+}
+
 parse_renv_lock() {
     command -v jq &>/dev/null || { log_warn "jq not found"; return 0; }
     [[ -f "renv.lock" ]] || { create_renv_lock || return 1; }
     jq -r '.Packages | keys[]' renv.lock 2>/dev/null | grep -v '^$' | sort -u || true
 }
 
+# Emit "package version" lines from renv.lock. Mirrors the R function
+# parse_renv_lock_versions().
+parse_renv_lock_versions() {
+    command -v jq &>/dev/null || return 0
+    [[ -f "renv.lock" ]] || return 0
+    jq -r '.Packages | to_entries[] | "\(.key) \(.value.Version // "")"' \
+        renv.lock 2>/dev/null | grep -v '^$' || true
+}
+
+# Emit "package|constraint" lines for Imports, Suggests, and Depends.
+# The constraint preserves the operator and version (e.g. ">= 1.0.0"),
+# or is empty when none is declared. Mirrors the version column of the
+# R function parse_description_all_deps().
+parse_description_constraints() {
+    [[ -f "DESCRIPTION" ]] || return 0
+    local field
+    for field in Imports Suggests Depends; do
+        awk -v f="$field" '
+        BEGIN { in_field=0; content="" }
+        $0 ~ "^"f":" { in_field=1; content=$0; next }
+        in_field && /^[[:space:]]/ { content=content " " $0; next }
+        in_field && /^[A-Z]/ { in_field=0 }
+        END {
+            if (content) {
+                gsub("^"f":[[:space:]]*", "", content)
+                gsub(/,/, "\n", content)
+                print content
+            }
+        }
+        ' DESCRIPTION
+    done | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$' | \
+    while IFS= read -r entry; do
+        local pkg constraint
+        pkg=$(printf '%s' "$entry" | sed -E 's/^([A-Za-z][A-Za-z0-9.]*).*/\1/')
+        constraint=$(printf '%s' "$entry" | sed -nE 's/.*\(([^)]*)\).*/\1/p')
+        [[ -n "$pkg" ]] && printf '%s|%s\n' "$pkg" "$constraint"
+    done
+}
+
 #==============================================================================
 # VALIDATION LOGIC
 #==============================================================================
+
+# Compare two versions. Echoes -1 when a < b, 0 when equal, 1 when
+# a > b, using version-aware ordering.
+version_compare() {
+    local a="$1" b="$2"
+    if [[ "$a" == "$b" ]]; then echo 0; return; fi
+    local first
+    first=$(printf '%s\n%s\n' "$a" "$b" | sort -V | head -n1)
+    if [[ "$first" == "$a" ]]; then echo -1; else echo 1; fi
+}
+
+# Test whether an exact version satisfies a DESCRIPTION-style
+# constraint. Mirrors the R function version_satisfies(). An absent
+# (empty/"*") or unparseable constraint is satisfied by any version.
+version_satisfies() {
+    local version="$1" constraint="$2"
+    constraint=$(printf '%s' "$constraint" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+    [[ -z "$constraint" || "$constraint" == "*" ]] && return 0
+
+    local re='^(>=|<=|==|!=|>|<|=)?[[:space:]]*([0-9][0-9.-]*)$'
+    [[ "$constraint" =~ $re ]] || return 0
+
+    local op="${BASH_REMATCH[1]}" target="${BASH_REMATCH[2]}"
+    [[ -z "$op" ]] && op=">="
+
+    local cmp; cmp=$(version_compare "$version" "$target")
+    case "$op" in
+        ">=") [[ "$cmp" -ge 0 ]] ;;
+        ">")  [[ "$cmp" -gt 0 ]] ;;
+        "<=") [[ "$cmp" -le 0 ]] ;;
+        "<")  [[ "$cmp" -lt 0 ]] ;;
+        "=="|"=") [[ "$cmp" -eq 0 ]] ;;
+        "!=") [[ "$cmp" -ne 0 ]] ;;
+        *) return 0 ;;
+    esac
+}
+
+# Detect cross-document version conflicts across DESCRIPTION
+# constraints, renv.lock exact versions, and exact pins from code and
+# the DESCRIPTION Remotes field. Mirrors the R function
+# detect_version_conflicts(). Returns 1 when any conflict is found.
+check_version_conflicts() {
+    local strict="${1:-false}" verbose="${2:-false}"
+    command -v jq &>/dev/null || { log_warn "jq not found; skipping version checks"; return 0; }
+
+    local dirs=("${STANDARD_DIRS[@]}")
+    [[ "$strict" == "true" ]] && dirs=("${STRICT_DIRS[@]}")
+
+    local -A lock_ver=() desc_con=()
+
+    if [[ -f "renv.lock" ]]; then
+        local p v
+        while IFS=' ' read -r p v; do
+            [[ -n "$p" ]] && lock_ver["$p"]="$v"
+        done < <(parse_renv_lock_versions)
+    fi
+
+    local c
+    while IFS='|' read -r p c; do
+        [[ -n "$p" ]] || continue
+        if [[ -n "$c" && "$c" != "*" ]]; then
+            desc_con["$p"]="$c"
+        elif [[ -z "${desc_con[$p]:-}" ]]; then
+            desc_con["$p"]="$c"
+        fi
+    done < <(parse_description_constraints)
+
+    # Collect exact pins as "pkg|version|source" lines from code and
+    # the DESCRIPTION Remotes field, deduplicated.
+    local pin_lines=()
+    local -A seen_pin=()
+    local add_pin
+    while IFS=' ' read -r p v; do
+        [[ -n "$p" && -n "$v" ]] || continue
+        add_pin="$p|$v|code"
+        [[ -z "${seen_pin[$add_pin]:-}" ]] && { seen_pin["$add_pin"]=1; pin_lines+=("$add_pin"); }
+    done < <(extract_code_package_versions "${dirs[@]}")
+    while IFS=' ' read -r p v; do
+        [[ -n "$p" && -n "$v" ]] || continue
+        add_pin="$p|$v|DESCRIPTION Remotes"
+        [[ -z "${seen_pin[$add_pin]:-}" ]] && { seen_pin["$add_pin"]=1; pin_lines+=("$add_pin"); }
+    done < <(parse_description_remotes)
+
+    local -A pkgset=()
+    local line
+    for line in "${pin_lines[@]}"; do pkgset["${line%%|*}"]=1; done
+    for p in "${!lock_ver[@]}"; do pkgset["$p"]=1; done
+    local sorted; mapfile -t sorted < <(printf '%s\n' "${!pkgset[@]}" | grep -v '^$' | sort -u)
+
+    local conflicts=0
+    for pkg in "${sorted[@]}"; do
+        local lv="${lock_ver[$pkg]:-}" con="${desc_con[$pkg]:-}"
+
+        # Gather this package's (version, source) pins.
+        local pv_versions=() pv_sources=()
+        local -A vset=()
+        for line in "${pin_lines[@]}"; do
+            [[ "${line%%|*}" == "$pkg" ]] || continue
+            local rest="${line#*|}"
+            pv_versions+=("${rest%%|*}")
+            pv_sources+=("${rest#*|}")
+            vset["${rest%%|*}"]=1
+        done
+
+        local issues=()
+        local i
+
+        if [[ ${#vset[@]} -gt 1 ]]; then
+            local labelled=()
+            for i in "${!pv_versions[@]}"; do
+                labelled+=("${pv_versions[$i]} (${pv_sources[$i]})")
+            done
+            local joined_v; joined_v=$(printf '%s vs ' "${labelled[@]}"); joined_v="${joined_v% vs }"
+            issues+=("version pins disagree: $joined_v")
+        fi
+
+        if [[ -n "$lv" ]]; then
+            for i in "${!pv_versions[@]}"; do
+                [[ "${pv_versions[$i]}" != "$lv" ]] && \
+                    issues+=("${pv_sources[$i]} pin ${pv_versions[$i]} != renv.lock $lv")
+            done
+        fi
+
+        if [[ -n "$con" && "$con" != "*" ]]; then
+            if [[ -n "$lv" ]] && ! version_satisfies "$lv" "$con"; then
+                issues+=("renv.lock $lv violates DESCRIPTION ($con)")
+            fi
+            for i in "${!pv_versions[@]}"; do
+                version_satisfies "${pv_versions[$i]}" "$con" || \
+                    issues+=("${pv_sources[$i]} pin ${pv_versions[$i]} violates DESCRIPTION ($con)")
+            done
+        fi
+
+        if [[ ${#issues[@]} -gt 0 ]]; then
+            conflicts=$((conflicts + 1))
+            local joined; joined=$(printf '%s; ' "${issues[@]}"); joined="${joined%; }"
+            log_error "$pkg: $joined"
+        fi
+    done
+
+    if [[ "$conflicts" -gt 0 ]]; then
+        log_error "Found $conflicts package(s) with inconsistent versions across DESCRIPTION, renv.lock, and code"
+        log_info "Reproducibility requires matching versions across all sources."
+        return 1
+    fi
+    return 0
+}
 
 compute_union_packages() {
     local -n code_ref="code_packages" desc_ref="desc_imports" renv_ref="renv_packages"
@@ -461,10 +719,13 @@ validate_package_environment() {
     local missing_from_desc; mapfile -t missing_from_desc < <(find_missing_from_description all_packages desc_imports)
     local missing_from_lock; mapfile -t missing_from_lock < <(find_missing_from_lock all_packages renv_packages)
 
-    report_and_fix_missing_description missing_from_desc "$verbose" "$auto_fix" || return 1
-    report_and_fix_missing_lock missing_from_lock "$verbose" "$auto_fix" || return 1
+    local status=0
+    report_and_fix_missing_description missing_from_desc "$verbose" "$auto_fix" || status=1
+    report_and_fix_missing_lock missing_from_lock "$verbose" "$auto_fix" || status=1
+    check_version_conflicts "$strict" "$verbose" || status=1
 
-    log_success "All packages properly declared"
+    [[ "$status" -eq 0 ]] && log_success "All packages properly declared"
+    return "$status"
 }
 
 sync_packages_to_code() {

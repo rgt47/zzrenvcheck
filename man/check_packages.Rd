@@ -11,6 +11,8 @@ check_packages(
   verbose = TRUE,
   validate_sources = auto_fix,
   transitive = FALSE,
+  versions = TRUE,
+  error_on_fail = FALSE,
   path = "."
 )
 }
@@ -31,6 +33,16 @@ from CRAN/Bioconductor/GitHub before adding. Default: TRUE when auto_fix.}
 
 \item{transitive}{Logical. If TRUE, also resolve and add transitive
 dependencies when fixing renv.lock. Default: FALSE.}
+
+\item{versions}{Logical. If TRUE, check that package versions are
+consistent across DESCRIPTION constraints, renv.lock, and code
+install pins. Default: TRUE.}
+
+\item{error_on_fail}{Logical. If TRUE, raise an error (rather than
+returning) when validation fails, so a non-interactive
+\command{Rscript} run exits with a non-zero status. The signalled
+condition has class \code{zzrenvcheck_validation_failure} and
+carries the result list in its \code{result} field. Default: FALSE.}
 
 \item{path}{Character. Path to project root. Default: current directory.}
 }

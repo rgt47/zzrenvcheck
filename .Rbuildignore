@@ -32,6 +32,7 @@
 ^docs$
 ^.*\.Rproj$
 ^CLAUDE\.md$
+^\.claude$
 ^CODE_OF_CONDUCT\.md$
 ^CONTRIBUTING\.md$
 ^_pkgdown\.yml$

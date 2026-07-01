@@ -98,6 +98,42 @@ Finds packages from multiple sources:
 - `tidyr::pivot_longer()` - Namespace calls
 - `#' @importFrom dplyr filter` - Roxygen imports
 
+### Version Synchronization
+
+Beyond checking that a package is *declared*, `check_packages()` checks
+that its *version* is consistent across DESCRIPTION constraints,
+`renv.lock`, and version-pinned installs in code. Comparison is
+constraint-aware: an exact version must satisfy a DESCRIPTION constraint,
+and two exact pins must agree.
+
+```r
+check_packages()
+
+# ── Version Conflicts ──
+# x Found 1 package with inconsistent versions across DESCRIPTION,
+#   renv.lock, and code
+# ! dplyr: code pin 1.2.0 != renv.lock 1.1.0; renv.lock 1.1.0 violates
+#   DESCRIPTION (>= 2.0.0)
+# i Reproducibility requires matching versions across all sources.
+```
+
+Version pins are read from pak and renv `@`-syntax
+(`pak::pak('dplyr@1.1.0')`, including vectorised and multi-argument
+calls), from `remotes`/`devtools` `install_version()`, and from the
+DESCRIPTION `Remotes:` field. In addition to the usual source
+directories, the reproducibility files `Dockerfile`, `install.sh`,
+`Makefile`, and `.Rprofile` are scanned, because pinned installs there
+commonly drift from `renv.lock`.
+
+The check is report-only (it never rewrites versions) and is controlled
+by the `versions` argument (default `TRUE`). Conflicts are returned in
+the `version_conflicts` element and set the result status to `fail`.
+
+Two forms are deliberately not compared: pak requirement and keyword
+refs (`pkg@>=1.6.0`, `pkg@last`, `pkg@current`), which are not exact
+pins; and pins split across multiple lines, because scanning is
+line-based.
+
 ### False Positive Filtering
 
 Applies 19 filters to avoid false positives:
@@ -144,7 +180,9 @@ Rscript -e 'zzrenvcheck::check_packages(auto_fix = FALSE)'
 ```yaml
 # .github/workflows/check-packages.yaml
 - name: Check dependencies
-  run: Rscript -e 'zzrenvcheck::check_packages()'
+  # error_on_fail = TRUE makes the run exit non-zero (failing the job)
+  # when any package is missing or a version conflict is found.
+  run: Rscript -e 'zzrenvcheck::check_packages(error_on_fail = TRUE)'
 ```
 
 ### Docker Integration
@@ -181,6 +219,7 @@ Rscript -e 'zzrenvcheck::check_packages()'
 | Function | Purpose |
 |----------|---------|
 | `extract_code_packages()` | Extract package references from R code |
+| `extract_code_package_versions()` | Extract version-pinned installs (pak/renv `@`, `install_version()`) |
 | `clean_package_names()` | Validate and filter package names |
 
 ### Parsing Functions
