@@ -61,30 +61,69 @@ parse_description_imports <- function(path = ".") {
 #' @export
 parse_renv_lock <- function(path = ".") {
 
+  versions <- parse_renv_lock_versions(path = path)
+  sort(unique(versions$package))
+}
+
+#' Parse renv.lock Package Versions
+#'
+#' Extracts package names and their locked exact versions from an
+#' renv.lock file. Unlike \code{parse_renv_lock()}, which returns names
+#' only, this retains the \code{Version} recorded for each package so
+#' that cross-document version synchronisation can be validated.
+#'
+#' @param path Character. Path to project root containing renv.lock.
+#'   Default: current directory.
+#'
+#' @return Data frame with columns \code{package} and \code{version}
+#'   (character). Packages without a recorded version yield
+#'   \code{NA_character_}. Returns a zero-row data frame when renv.lock
+#'   is absent or empty.
+#'
+#' @keywords internal
+parse_renv_lock_versions <- function(path = ".") {
+
+  empty <- data.frame(
+    package = character(0),
+    version = character(0),
+    stringsAsFactors = FALSE
+  )
+
   lock_file <- file.path(path, "renv.lock")
 
   if (!file.exists(lock_file)) {
     cli::cli_alert_warning("renv.lock file not found at {.path {lock_file}}")
-    return(character(0))
+    return(empty)
   }
 
   tryCatch({
-    # Parse JSON with jsonlite
     lock_data <- jsonlite::fromJSON(lock_file, simplifyVector = FALSE)
 
-    # Extract package names from Packages section
-    if (is.null(lock_data$Packages)) {
+    if (is.null(lock_data$Packages) || length(lock_data$Packages) == 0) {
       cli::cli_alert_info("No packages found in renv.lock")
-      return(character(0))
+      return(empty)
     }
 
     packages <- names(lock_data$Packages)
 
-    sort(unique(packages))
+    versions <- vapply(
+      lock_data$Packages,
+      function(entry) {
+        v <- entry$Version
+        if (is.null(v) || length(v) == 0) NA_character_ else as.character(v)
+      },
+      character(1)
+    )
+
+    data.frame(
+      package = packages,
+      version = unname(versions),
+      stringsAsFactors = FALSE
+    )
 
   }, error = function(e) {
     cli::cli_alert_danger("Error parsing renv.lock: {e$message}")
-    character(0)
+    empty
   })
 }
 
@@ -165,6 +204,75 @@ parse_description_declared <- function(path = ".") {
   }, error = function(e) {
     character(0)
   })
+}
+
+#' Parse Version-Pinned DESCRIPTION Remotes
+#'
+#' Extracts package version pins from the \code{Remotes:} field of a
+#' DESCRIPTION file. A remote reference is a git ref, so only
+#' version-like refs are returned: a leading \code{v} is stripped and the
+#' remainder must begin with a digit (e.g. \code{owner/repo@@v1.1.0} or
+#' \code{owner/repo@@1.1.0}). Branch names, tags such as \code{devel}, and
+#' commit SHAs are not comparable to an \code{renv.lock} version and are
+#' skipped. Type prefixes (\code{github::}, \code{gitlab::}, ...) are
+#' removed; the package name is taken from the final path segment of the
+#' repository.
+#'
+#' @param path Character. Path to project root.
+#'
+#' @return Data frame with columns \code{package} and \code{version}
+#'   (character); zero rows when no version-like remotes are declared.
+#'
+#' @keywords internal
+parse_description_remotes <- function(path = ".") {
+
+  empty <- data.frame(
+    package = character(0),
+    version = character(0),
+    stringsAsFactors = FALSE
+  )
+
+  desc_file <- file.path(path, "DESCRIPTION")
+  if (!file.exists(desc_file)) {
+    return(empty)
+  }
+
+  remotes <- tryCatch({
+    d <- desc::desc(desc_file)
+    r <- d$get_remotes()
+    if (is.null(r)) character(0) else r
+  }, error = function(e) character(0))
+
+  if (length(remotes) == 0) {
+    return(empty)
+  }
+
+  pkgs <- character(0)
+  vers <- character(0)
+
+  for (rem in remotes) {
+    rem <- sub("^[a-zA-Z]+::", "", trimws(rem))
+    if (!grepl("@", rem, fixed = TRUE)) {
+      next
+    }
+    spec <- strsplit(rem, "@", fixed = TRUE)[[1]]
+    pkg <- sub(".*/", "", spec[1])
+    ver <- sub("^[vV]", "", spec[2])
+    if (!grepl("^[0-9]", ver)) {
+      next
+    }
+    pkgs <- c(pkgs, pkg)
+    vers <- c(vers, ver)
+  }
+
+  if (length(pkgs) == 0) {
+    return(empty)
+  }
+
+  res <- data.frame(package = pkgs, version = vers, stringsAsFactors = FALSE)
+  valid <- clean_package_names(res$package)
+  res <- res[res$package %in% valid, , drop = FALSE]
+  unique(res)
 }
 
 #' Parse the Project's Own Package Name

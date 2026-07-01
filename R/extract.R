@@ -58,6 +58,124 @@ extract_code_packages <- function(dirs = c("R", "scripts", "analysis"),
   all_packages
 }
 
+#' Extract Version-Pinned Package Installs from Code
+#'
+#' Scans source files for package installation calls that pin an exact
+#' version, recording the package name together with the pinned version.
+#' Recognised forms are documented in \code{CODE_PIN_PATTERNS}: pak and
+#' renv \code{@@}-syntax (\code{pak::pak('dplyr@@1.1.0')}) and the
+#' \code{version=} argument of \code{remotes}/\code{devtools}
+#' \code{install_version()}.
+#'
+#' Only explicitly pinned installs are returned; ordinary
+#' \code{library()}/\code{::} references carry no version and are
+#' ignored here (they are handled by \code{extract_code_packages()}).
+#' Package names are filtered through \code{clean_package_names()} so the
+#' same false-positive rules apply.
+#'
+#' @param dirs Character vector of directory paths to scan.
+#' @param path Character. Path to project root. Default: current
+#'   directory.
+#' @param skip_comments Logical. Skip commented lines. Default: TRUE.
+#'
+#' @return Data frame with columns \code{package} and \code{version}
+#'   (character). One row per pinned mention; the same package may appear
+#'   more than once if pinned to differing versions across files.
+#'
+#' @examples
+#' \dontrun{
+#' pins <- extract_code_package_versions(dirs = c("R", "analysis"))
+#' }
+#'
+#' @export
+extract_code_package_versions <- function(dirs = c("R", "scripts", "analysis"),
+                                           path = ".",
+                                           skip_comments = TRUE) {
+
+  empty <- data.frame(
+    package = character(0),
+    version = character(0),
+    stringsAsFactors = FALSE
+  )
+
+  path <- normalizePath(path, mustWork = FALSE)
+  files <- find_r_files(dirs, path)
+
+  # Reproducibility files (Dockerfile, install.sh, ...) carry pinned
+  # installs too. Scan them for versions only, never for plain names.
+  repro <- file.path(path, REPRO_FILES)
+  files <- unique(c(files, repro[file.exists(repro)]))
+
+  if (length(files) == 0) {
+    return(empty)
+  }
+
+  pkgs <- character(0)
+  vers <- character(0)
+
+  for (file in files) {
+    lines <- tryCatch(
+      readLines(file, warn = FALSE),
+      error = function(e) character(0)
+    )
+
+    if (length(lines) == 0) {
+      next
+    }
+
+    if (skip_comments) {
+      is_roxygen <- grepl("^\\s*#'", lines)
+      is_comment <- grepl("^\\s*#", lines) & !is_roxygen
+      lines[is_comment] <- ""
+    }
+
+    # @-syntax: on any line that contains a pak/renv install call,
+    # extract every 'pkg@version' token (handles vectors and
+    # multi-argument calls, not just the first argument).
+    on_call <- grepl(CODE_PIN_PATTERNS$pin_call_at, lines, perl = TRUE)
+    if (any(on_call)) {
+      m <- regmatches(
+        lines[on_call],
+        gregexec(CODE_PIN_PATTERNS$at_token, lines[on_call], perl = TRUE)
+      )
+      for (line_match in m) {
+        if (is.matrix(line_match) && nrow(line_match) == 3) {
+          pkgs <- c(pkgs, line_match[2, ])
+          vers <- c(vers, line_match[3, ])
+        }
+      }
+    }
+
+    # version= syntax: remotes/devtools install_version() calls.
+    m <- regmatches(
+      lines,
+      gregexec(CODE_PIN_PATTERNS$version_arg, lines, perl = TRUE)
+    )
+    for (line_match in m) {
+      if (is.matrix(line_match) && nrow(line_match) == 3) {
+        pkgs <- c(pkgs, line_match[2, ])
+        vers <- c(vers, line_match[3, ])
+      }
+    }
+  }
+
+  if (length(pkgs) == 0) {
+    return(empty)
+  }
+
+  result <- data.frame(
+    package = pkgs,
+    version = vers,
+    stringsAsFactors = FALSE
+  )
+
+  # Apply the same false-positive filters used for plain references.
+  valid <- clean_package_names(result$package)
+  result <- result[result$package %in% valid, , drop = FALSE]
+
+  unique(result)
+}
+
 #' Find R Files in Directories
 #'
 #' Recursively finds R source files in specified directories.
@@ -123,9 +241,14 @@ filter_skip_paths <- function(files) {
       }
     }
 
-    # Check if file is in skip directory
+    # Check if file is in skip directory. Match a path *segment*
+    # (e.g. '/renv/'), not an arbitrary substring, so an unrelated
+    # ancestor directory whose name merely contains a skip token
+    # (e.g. a project under '.../zzrenvcheck/') is not skipped.
+    sep <- .Platform$file.sep
     for (skip_dir in SKIP_DIRS) {
-      if (grepl(skip_dir, file, fixed = TRUE)) {
+      needle <- paste0(sep, gsub("/", sep, skip_dir, fixed = TRUE), sep)
+      if (grepl(needle, file, fixed = TRUE)) {
         keep[i] <- FALSE
         break
       }
