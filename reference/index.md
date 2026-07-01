@@ -16,6 +16,8 @@
   : Clean and Validate Package Names
 - [`create_renv_lock()`](https://rgt47.github.io/zzrenvcheck/reference/create_renv_lock.md)
   : Create Empty renv.lock
+- [`extract_code_package_versions()`](https://rgt47.github.io/zzrenvcheck/reference/extract_code_package_versions.md)
+  : Extract Version-Pinned Package Installs from Code
 - [`extract_code_packages()`](https://rgt47.github.io/zzrenvcheck/reference/extract_code_packages.md)
   : Extract Package References from R Code
 - [`fix_packages()`](https://rgt47.github.io/zzrenvcheck/reference/fix_packages.md)

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,21 @@
       <small>Source: <a href="https://github.com/rgt47/zzrenvcheck/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="zzrenvcheck-v040">zzrenvcheck v0.4.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v040"></a></h2>
+<ul><li>
+<code><a href="../reference/check_packages.html">check_packages()</a></code> now validates <strong>version consistency</strong> across DESCRIPTION constraints, <code>renv.lock</code>, and version-pinned installs in code. Reproducibility requires that a package resolve to compatible versions everywhere; a mismatch (for example DESCRIPTION requires <code>&gt;= 2.0.0</code> while <code>renv.lock</code> records <code>1.1.0</code>) is reported under a new ‘Version Conflicts’ section. Comparison is constraint-aware: an exact version must satisfy a DESCRIPTION constraint, and two exact pins must agree. The check is report-only and is controlled by the new <code>versions</code> argument (default <code>TRUE</code>). Results are returned in the <code>version_conflicts</code> element.</li>
+<li>Added <code><a href="../reference/extract_code_package_versions.html">extract_code_package_versions()</a></code>, which extracts version-pinned installs from code. Recognised forms are pak and renv <code>@</code>-syntax (<code>pak::pak('dplyr@1.1.0')</code>, including vectorised and multi-argument calls) and the <code>remotes</code>/<code>devtools</code> <code>install_version()</code> function (named, positional, or <code>package =</code>/<code>version =</code> argument shapes). In addition to the usual scanned directories, reproducibility files (<code>Dockerfile</code>, <code>install.sh</code>, <code>Makefile</code>, <code>.Rprofile</code>) are scanned for pins, since these commonly drift from <code>renv.lock</code>.</li>
+<li>Version-like pins in the DESCRIPTION <code>Remotes:</code> field (for example <code>owner/repo@v1.1.0</code>) are parsed and reconciled against <code>renv.lock</code>.</li>
+<li>Added the <code>error_on_fail</code> argument to <code><a href="../reference/check_packages.html">check_packages()</a></code>. When <code>TRUE</code>, a failing validation raises a <code>zzrenvcheck_validation_failure</code> condition so that a non-interactive <code>Rscript</code> run exits non-zero, matching the shell script’s behaviour. Default <code>FALSE</code> preserves the returned-result behaviour.</li>
+<li>The shell validator (<code>modules/validation.sh</code>) mirrors all of the above through <code>check_version_conflicts()</code> and exits non-zero on any conflict.</li>
+<li>Corrected an over-broad path filter: files were skipped when any ancestor directory name merely contained a skip token (for example <code>renv</code>); the filter now matches a path segment.</li>
+</ul><div class="section level3">
+<h3 id="known-limitations-0-4-0">Known limitations<a class="anchor" aria-label="anchor" href="#known-limitations-0-4-0"></a></h3>
+<ul><li>pak requirement and keyword refs (<code>pkg@&gt;=1.6.0</code>, <code>pkg@last</code>, <code>pkg@current</code>) are not exact pins and are not compared; only exact <code>pkg@version</code> pins are checked.</li>
+<li>Scanning is line-based, so a version pin split across multiple lines (for example a <code>pak::pak(c(...))</code> call with one package per line) is not detected.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.2" id="zzrenvcheck-v032">zzrenvcheck v0.3.2<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v032"></a></h2>
 <ul><li><p>Added a vignette, ‘renv vs zzrenvcheck’, explaining how the two tools differ and complement each other (<code>renv</code> manages the environment; zzrenvcheck audits the code/DESCRIPTION/renv.lock declarations). <code>renv</code> is now listed under Suggests for the vignette.</p></li>

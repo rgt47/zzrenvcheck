@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,6 +124,7 @@
 <li>Uses only shell tools (grep, sed, awk, jq, curl)</li>
 <li>Suitable for CI/CD pipelines</li>
 <li>Can validate and auto-fix via CRAN API</li>
+<li>Runs the same version-synchronization check as the R package (DESCRIPTION vs renv.lock vs code pins) and exits non-zero on a conflict, so <code>zzrenvcheck --no-fix</code> works as a CI gate</li>
 </ul>
 </div>
 </div>
@@ -152,6 +153,23 @@
 <p>Finds packages from multiple sources: - <code><a href="https://dplyr.tidyverse.org" class="external-link">library(dplyr)</a></code> - Direct library calls - <code><a href="https://ggplot2.tidyverse.org" class="external-link">require(ggplot2)</a></code> - Conditional loading - <code>tidyr::pivot_longer()</code> - Namespace calls - <code>#' @importFrom dplyr filter</code> - Roxygen imports</p>
 </div>
 <div class="section level3">
+<h3 id="version-synchronization">Version Synchronization<a class="anchor" aria-label="anchor" href="#version-synchronization"></a>
+</h3>
+<p>Beyond checking that a package is <em>declared</em>, <code><a href="reference/check_packages.html">check_packages()</a></code> checks that its <em>version</em> is consistent across DESCRIPTION constraints, <code>renv.lock</code>, and version-pinned installs in code. Comparison is constraint-aware: an exact version must satisfy a DESCRIPTION constraint, and two exact pins must agree.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/check_packages.html">check_packages</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># ── Version Conflicts ──</span></span>
+<span><span class="co"># x Found 1 package with inconsistent versions across DESCRIPTION,</span></span>
+<span><span class="co">#   renv.lock, and code</span></span>
+<span><span class="co"># ! dplyr: code pin 1.2.0 != renv.lock 1.1.0; renv.lock 1.1.0 violates</span></span>
+<span><span class="co">#   DESCRIPTION (&gt;= 2.0.0)</span></span>
+<span><span class="co"># i Reproducibility requires matching versions across all sources.</span></span></code></pre></div>
+<p>Version pins are read from pak and renv <code>@</code>-syntax (<code>pak::pak('dplyr@1.1.0')</code>, including vectorised and multi-argument calls), from <code>remotes</code>/<code>devtools</code> <code>install_version()</code>, and from the DESCRIPTION <code>Remotes:</code> field. In addition to the usual source directories, the reproducibility files <code>Dockerfile</code>, <code>install.sh</code>, <code>Makefile</code>, and <code>.Rprofile</code> are scanned, because pinned installs there commonly drift from <code>renv.lock</code>.</p>
+<p>The check is report-only (it never rewrites versions) and is controlled by the <code>versions</code> argument (default <code>TRUE</code>). Conflicts are returned in the <code>version_conflicts</code> element and set the result status to <code>fail</code>.</p>
+<p>Two forms are deliberately not compared: pak requirement and keyword refs (<code>pkg@&gt;=1.6.0</code>, <code>pkg@last</code>, <code>pkg@current</code>), which are not exact pins; and pins split across multiple lines, because scanning is line-based.</p>
+</div>
+<div class="section level3">
 <h3 id="false-positive-filtering">False Positive Filtering<a class="anchor" aria-label="anchor" href="#false-positive-filtering"></a>
 </h3>
 <p>Applies 19 filters to avoid false positives: - Base R packages (base, utils, stats, etc.) - Placeholder names (myproject, package, foo, bar) - Generic words (my, your, file, path) - Invalid package names</p>
@@ -159,7 +177,7 @@
 <div class="section level3">
 <h3 id="auto-fix-capabilities">Auto-Fix Capabilities<a class="anchor" aria-label="anchor" href="#auto-fix-capabilities"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Automatically adds missing packages</span></span>
 <span><span class="fu"><a href="reference/fix_packages.html">fix_packages</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -172,7 +190,7 @@
 <div class="section level3">
 <h3 id="status-reports">Status Reports<a class="anchor" aria-label="anchor" href="#status-reports"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">status</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/report_packages.html">report_packages</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Output:</span></span>
@@ -187,24 +205,26 @@
 <div class="section level3">
 <h3 id="pre-commit-validation">Pre-Commit Validation<a class="anchor" aria-label="anchor" href="#pre-commit-validation"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># In your project</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'zzrenvcheck::check_packages(auto_fix = FALSE)'</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># In your project</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'zzrenvcheck::check_packages(auto_fix = FALSE)'</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="cicd-pipeline">CI/CD Pipeline<a class="anchor" aria-label="anchor" href="#cicd-pipeline"></a>
 </h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># .github/workflows/check-packages.yaml</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Check dependencies</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="at">  </span><span class="fu">run</span><span class="kw">:</span><span class="at"> Rscript -e 'zzrenvcheck::check_packages()'</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># .github/workflows/check-packages.yaml</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Check dependencies</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">  # error_on_fail = TRUE makes the run exit non-zero (failing the job)</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">  # when any package is missing or a version conflict is found.</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="at">  </span><span class="fu">run</span><span class="kw">:</span><span class="at"> Rscript -e 'zzrenvcheck::check_packages(error_on_fail = TRUE)'</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="docker-integration">Docker Integration<a class="anchor" aria-label="anchor" href="#docker-integration"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Before building Docker image</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">make</span> check-renv  <span class="co"># Uses validation.sh (shell version)</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co"># Or use R package</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'zzrenvcheck::check_packages()'</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Before building Docker image</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">make</span> check-renv  <span class="co"># Uses validation.sh (shell version)</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co"># Or use R package</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'zzrenvcheck::check_packages()'</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -274,6 +294,10 @@
 <h3 id="extraction-functions">Extraction Functions<a class="anchor" aria-label="anchor" href="#extraction-functions"></a>
 </h3>
 <table class="table">
+<colgroup>
+<col width="52%">
+<col width="47%">
+</colgroup>
 <thead><tr>
 <th>Function</th>
 <th>Purpose</th>
@@ -282,6 +306,10 @@
 <tr>
 <td><code><a href="reference/extract_code_packages.html">extract_code_packages()</a></code></td>
 <td>Extract package references from R code</td>
+</tr>
+<tr>
+<td><code><a href="reference/extract_code_package_versions.html">extract_code_package_versions()</a></code></td>
+<td>Extract version-pinned installs (pak/renv <code>@</code>, <code>install_version()</code>)</td>
 </tr>
 <tr>
 <td><code><a href="reference/clean_package_names.html">clean_package_names()</a></code></td>
@@ -325,7 +353,7 @@
 <div class="section level3">
 <h3 id="basic-usage">Basic Usage<a class="anchor" aria-label="anchor" href="#basic-usage"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/rgt47/zzrenvcheck" class="external-link">zzrenvcheck</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Validate current project</span></span>
@@ -340,7 +368,7 @@
 <div class="section level3">
 <h3 id="auto-fix-workflow">Auto-Fix Workflow<a class="anchor" aria-label="anchor" href="#auto-fix-workflow"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Check and fix automatically</span></span>
 <span><span class="fu"><a href="reference/fix_packages.html">fix_packages</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -351,7 +379,7 @@
 <div class="section level3">
 <h3 id="programmatic-use">Programmatic Use<a class="anchor" aria-label="anchor" href="#programmatic-use"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/check_packages.html">check_packages</a></span><span class="op">(</span>auto_fix <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">status</span> <span class="op">==</span> <span class="st">"fail"</span><span class="op">)</span> <span class="op">{</span></span>
@@ -363,7 +391,7 @@
 <h3 id="sync-to-code-cleanup-mode">Sync to Code (Cleanup Mode)<a class="anchor" aria-label="anchor" href="#sync-to-code-cleanup-mode"></a>
 </h3>
 <p>Sync DESCRIPTION and renv.lock to match your code exactly. Code is treated as the single source of truth:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Sync packages (adds missing, removes unused)</span></span>
 <span><span class="fu"><a href="reference/sync_packages.html">sync_packages</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -377,7 +405,7 @@
 <h3 id="package-source-validation">Package Source Validation<a class="anchor" aria-label="anchor" href="#package-source-validation"></a>
 </h3>
 <p>Check if packages are installable from CRAN, Bioconductor, or GitHub:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Check single package</span></span>
 <span><span class="fu"><a href="reference/is_installable.html">is_installable</a></span><span class="op">(</span><span class="st">"dplyr"</span><span class="op">)</span></span>
 <span><span class="co"># Returns: list(installable = TRUE, source = "CRAN", package = "dplyr")</span></span>
@@ -470,7 +498,7 @@
 <div class="section level3">
 <h3 id="directory-scanning">Directory Scanning<a class="anchor" aria-label="anchor" href="#directory-scanning"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Standard mode (default)</span></span>
 <span><span class="fu"><a href="reference/check_packages.html">check_packages</a></span><span class="op">(</span>strict <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co"># Scans: R/, scripts/, analysis/</span></span>
@@ -482,7 +510,7 @@
 <div class="section level3">
 <h3 id="verbosity">Verbosity<a class="anchor" aria-label="anchor" href="#verbosity"></a>
 </h3>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Verbose (default) - shows all issues</span></span>
 <span><span class="fu"><a href="reference/check_packages.html">check_packages</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>

@@ -13,6 +13,8 @@ check_packages(
   verbose = TRUE,
   validate_sources = auto_fix,
   transitive = FALSE,
+  versions = TRUE,
+  error_on_fail = FALSE,
   path = "."
 )
 ```
@@ -46,6 +48,20 @@ check_packages(
 
   Logical. If TRUE, also resolve and add transitive dependencies when
   fixing renv.lock. Default: FALSE.
+
+- versions:
+
+  Logical. If TRUE, check that package versions are consistent across
+  DESCRIPTION constraints, renv.lock, and code install pins. Default:
+  TRUE.
+
+- error_on_fail:
+
+  Logical. If TRUE, raise an error (rather than returning) when
+  validation fails, so a non-interactive `Rscript` run exits with a
+  non-zero status. The signalled condition has class
+  `zzrenvcheck_validation_failure` and carries the result list in its
+  `result` field. Default: FALSE.
 
 - path:
 

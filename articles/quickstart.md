@@ -103,6 +103,57 @@ sync_packages(dry_run = TRUE)
 
 This adds missing packages and removes unused ones.
 
+## Version Synchronization
+
+Reproducibility requires that a package resolve to compatible versions
+everywhere it is named.
+[`check_packages()`](https://rgt47.github.io/zzrenvcheck/reference/check_packages.md)
+compares the version recorded in DESCRIPTION constraints, in
+`renv.lock`, and in version-pinned installs found in code, and reports
+any mismatch. The comparison is constraint-aware: an exact version must
+satisfy a DESCRIPTION constraint, and two exact pins must agree.
+
+Consider a project whose DESCRIPTION requires `dplyr (>= 2.0.0)`, whose
+`renv.lock` records `dplyr` at `1.1.0`, and whose code pins a third
+version with `pak::pak('dplyr@1.2.0')`. Running
+[`check_packages()`](https://rgt47.github.io/zzrenvcheck/reference/check_packages.md)
+reports:
+
+    ── Version Conflicts ──
+    x Found 1 package with inconsistent versions across DESCRIPTION,
+      renv.lock, and code
+    ! dplyr: code pin 1.2.0 != renv.lock 1.1.0; renv.lock 1.1.0 violates
+      DESCRIPTION (>= 2.0.0)
+    i Reproducibility requires matching versions across all sources.
+
+Pins are read from pak and renv `@`-syntax (including vectorised and
+multi-argument `pak()` calls), from `remotes`/`devtools`
+`install_version()`, and from the DESCRIPTION `Remotes:` field. The
+reproducibility files `Dockerfile`, `install.sh`, `Makefile`, and
+`.Rprofile` are scanned in addition to the source directories.
+
+The check is report-only; it never rewrites versions. Disable it with
+`check_packages(versions = FALSE)`. Conflicts are returned in the
+`version_conflicts` element of the result.
+
+Two forms are deliberately not compared: pak requirement and keyword
+refs (`pkg@>=1.6.0`, `pkg@last`, `pkg@current`), which do not pin an
+exact version; and pins split across multiple lines, because scanning is
+line-based.
+
+The standalone shell script performs the same version-consistency check
+on every run. It reports identical conflicts and exits non-zero when any
+are found, so no extra flag is required:
+
+``` bash
+# Report-only validation, including version conflicts
+zzrenvcheck --no-fix
+
+# ── Version Conflicts ──
+# dplyr: code pin 1.2.0 != renv.lock 1.1.0; renv.lock 1.1.0 violates
+#   DESCRIPTION (>= 2.0.0)
+```
+
 ## Package Source Validation
 
 Check if packages exist on CRAN, Bioconductor, or GitHub:
@@ -131,7 +182,9 @@ Rscript -e 'zzrenvcheck::check_packages(auto_fix = FALSE)'
 ``` yaml
 # .github/workflows/check.yaml
 - name: Check dependencies
-  run: Rscript -e 'zzrenvcheck::check_packages()'
+  # error_on_fail = TRUE exits non-zero (failing the job) on any
+  # missing package or version conflict.
+  run: Rscript -e 'zzrenvcheck::check_packages(error_on_fail = TRUE)'
 ```
 
 ### Makefile Integration
@@ -150,9 +203,17 @@ For environments without R:
 cd zzrenvcheck
 ./install.sh --prefix ~/bin
 
-# Use anywhere
+# Report-only validation (mirrors check_packages(auto_fix = FALSE))
+zzrenvcheck --no-fix
+
+# Auto-fix, strict, verbose
 zzrenvcheck --fix --strict --verbose
 ```
+
+The shell script mirrors the R package: it detects missing and unused
+packages and runs the same version-consistency check across DESCRIPTION,
+`renv.lock`, and code pins. It exits non-zero when validation fails,
+which makes `zzrenvcheck --no-fix` a drop-in CI gate.
 
 Features:
 

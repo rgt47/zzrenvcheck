@@ -9,8 +9,10 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/index.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/news/index.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/BASE_PACKAGES.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/CODE_PIN_PATTERNS.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/FILE_EXTENSIONS.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/PLACEHOLDER_PACKAGES.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/REPRO_FILES.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/SKIP_DIRS.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/SKIP_FILES.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/STANDARD_DIRS.html</loc></url>
@@ -24,6 +26,9 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/clean_description.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/clean_package_names.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/create_renv_lock.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/desc_constraint_for.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/detect_version_conflicts.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_code_package_versions.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_code_packages.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_library_calls.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_namespace_calls.html</loc></url>
@@ -52,7 +57,9 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_declared.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_imports.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_package_name.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_remotes.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_renv_lock.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_renv_lock_versions.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/remove_from_description.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/remove_from_renv_lock.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/report_packages.html</loc></url>
@@ -63,6 +70,7 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/validate_bioconductor.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/validate_cran.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/validate_github.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/version_satisfies.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/zzrenvcheck-package.html</loc></url>
 </urlset>
 
