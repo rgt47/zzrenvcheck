@@ -14,6 +14,7 @@ check_packages(
   validate_sources = auto_fix,
   transitive = FALSE,
   versions = TRUE,
+  fresh = FALSE,
   error_on_fail = FALSE,
   path = "."
 )
@@ -54,6 +55,17 @@ check_packages(
   Logical. If TRUE, check that package versions are consistent across
   DESCRIPTION constraints, renv.lock, and code install pins. Default:
   TRUE.
+
+- fresh:
+
+  Logical. If TRUE, rebuild renv.lock from a clean code scan,
+  re-resolving every package and its transitive dependencies to the
+  current repository versions instead of preserving existing pins, and
+  pruning packages no longer used by code. A deliberate version refresh
+  (it can pull breaking updates); ordinary `auto_fix` keeps pinned
+  versions. Routes through
+  [`sync_packages`](https://rgt47.github.io/zzrenvcheck/reference/sync_packages.md).
+  Default: FALSE.
 
 - error_on_fail:
 

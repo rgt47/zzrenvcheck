@@ -12,7 +12,8 @@ sync_packages(
   path = ".",
   verbose = FALSE,
   dry_run = FALSE,
-  transitive = FALSE
+  transitive = FALSE,
+  fresh = FALSE
 )
 ```
 
@@ -39,6 +40,13 @@ sync_packages(
 
   Logical. If TRUE, also resolve and add transitive dependencies to
   renv.lock. Default: FALSE.
+
+- fresh:
+
+  Logical. If TRUE, re-add the full resolved closure so every renv.lock
+  entry is overwritten at the current repository version rather than
+  only adding missing packages. Implies `transitive = TRUE`. A
+  deliberate version refresh. Default: FALSE.
 
 ## Value
 

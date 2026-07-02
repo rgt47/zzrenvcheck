@@ -1,5 +1,20 @@
 # Changelog
 
+## zzrenvcheck v0.5.0
+
+- [`check_packages()`](https://rgt47.github.io/zzrenvcheck/reference/check_packages.md)
+  gains a `fresh` argument. When `TRUE` it rebuilds `renv.lock` from a
+  clean code scan: every package used by the code, and its transitive
+  dependencies, is re-resolved to the current repository version and
+  overwritten in the lockfile, and packages no longer used by code are
+  pruned. This is a deliberate version refresh (it can pull breaking
+  updates), distinct from ordinary `auto_fix`, which reconciles presence
+  but preserves existing pins. It is intended for use after a base image
+  or repository-snapshot change; run it in the container so versions
+  resolve against the pinned snapshot. `fresh` routes through
+  [`sync_packages()`](https://rgt47.github.io/zzrenvcheck/reference/sync_packages.md),
+  which also syncs DESCRIPTION. Default: `FALSE`.
+
 ## zzrenvcheck v0.4.0
 
 - [`check_packages()`](https://rgt47.github.io/zzrenvcheck/reference/check_packages.md)

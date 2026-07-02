@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,11 @@
       <small>Source: <a href="https://github.com/rgt47/zzrenvcheck/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="zzrenvcheck-v050">zzrenvcheck v0.5.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v050"></a></h2>
+<ul><li>
+<code><a href="../reference/check_packages.html">check_packages()</a></code> gains a <code>fresh</code> argument. When <code>TRUE</code> it rebuilds <code>renv.lock</code> from a clean code scan: every package used by the code, and its transitive dependencies, is re-resolved to the current repository version and overwritten in the lockfile, and packages no longer used by code are pruned. This is a deliberate version refresh (it can pull breaking updates), distinct from ordinary <code>auto_fix</code>, which reconciles presence but preserves existing pins. It is intended for use after a base image or repository-snapshot change; run it in the container so versions resolve against the pinned snapshot. <code>fresh</code> routes through <code><a href="../reference/sync_packages.html">sync_packages()</a></code>, which also syncs DESCRIPTION. Default: <code>FALSE</code>.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.0" id="zzrenvcheck-v040">zzrenvcheck v0.4.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v040"></a></h2>
 <ul><li>

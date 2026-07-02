@@ -9,7 +9,7 @@ DESCRIPTION and locked in renv.lock for reproducibility."><meta property="og:ima
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,7 @@ DESCRIPTION and locked in renv.lock for reproducibility.</p>
 <span>  validate_sources <span class="op">=</span> <span class="va">auto_fix</span>,</span>
 <span>  transitive <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  versions <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  fresh <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  error_on_fail <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  path <span class="op">=</span> <span class="st">"."</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -96,6 +97,15 @@ dependencies when fixing renv.lock. Default: FALSE.</p></dd>
 <dd><p>Logical. If TRUE, check that package versions are
 consistent across DESCRIPTION constraints, renv.lock, and code
 install pins. Default: TRUE.</p></dd>
+
+
+<dt id="arg-fresh">fresh<a class="anchor" aria-label="anchor" href="#arg-fresh"></a></dt>
+<dd><p>Logical. If TRUE, rebuild renv.lock from a clean code scan,
+re-resolving every package and its transitive dependencies to the current
+repository versions instead of preserving existing pins, and pruning
+packages no longer used by code. A deliberate version refresh (it can pull
+breaking updates); ordinary <code>auto_fix</code> keeps pinned versions.
+Routes through <code><a href="sync_packages.html">sync_packages</a></code>. Default: FALSE.</p></dd>
 
 
 <dt id="arg-error-on-fail">error_on_fail<a class="anchor" aria-label="anchor" href="#arg-error-on-fail"></a></dt>
