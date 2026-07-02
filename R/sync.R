@@ -14,6 +14,10 @@
 #' @param verbose Logical. Show detailed output. Default: FALSE.
 #' @param dry_run Logical. If TRUE, only report changes without making them.
 #'   Default: FALSE.
+#' @param fresh Logical. If TRUE, re-add the full resolved closure so every
+#'   renv.lock entry is overwritten at the current repository version rather
+#'   than only adding missing packages. Implies \code{transitive = TRUE}. A
+#'   deliberate version refresh. Default: FALSE.
 #'
 #' @return Invisibly returns a list with changes made
 #'
@@ -43,9 +47,17 @@ sync_packages <- function(strict = TRUE,
                           path = ".",
                           verbose = FALSE,
                           dry_run = FALSE,
-                          transitive = FALSE) {
+                          transitive = FALSE,
+                          fresh = FALSE) {
 
-  cli::cli_h1("Sync Packages to Code")
+  # fresh rebuilds renv.lock from code: re-resolve and overwrite every entry at
+  # current repo versions rather than preserving existing pins. It needs the
+  # transitive closure so dependency versions are refreshed too.
+  if (fresh) {
+    transitive <- TRUE
+  }
+
+  cli::cli_h1(if (fresh) "Refresh Packages from Code" else "Sync Packages to Code")
 
   if (dry_run) {
     cli::cli_alert_info("Dry run mode - no changes will be made")
@@ -95,11 +107,13 @@ sync_packages <- function(strict = TRUE,
     db <- available.packages()
     resolved <- resolve_transitive_deps(code_packages, db = db)
     resolved_names <- names(resolved)
-    to_add_lock <- setdiff(resolved_names, renv_packages)
+    # fresh: re-add the whole closure so every entry is overwritten at the
+    # current repo version. Otherwise add only what is missing, preserving pins.
+    to_add_lock <- if (fresh) resolved_names else setdiff(resolved_names, renv_packages)
     to_remove_lock <- setdiff(renv_packages, c(resolved_names, "renv"))
   } else {
     db <- NULL
-    to_add_lock <- setdiff(code_packages, renv_packages)
+    to_add_lock <- if (fresh) code_packages else setdiff(code_packages, renv_packages)
     to_remove_lock <- setdiff(renv_packages, c(code_packages, "renv"))
   }
 

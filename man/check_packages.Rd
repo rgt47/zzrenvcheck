@@ -12,6 +12,7 @@ check_packages(
   validate_sources = auto_fix,
   transitive = FALSE,
   versions = TRUE,
+  fresh = FALSE,
   error_on_fail = FALSE,
   path = "."
 )
@@ -37,6 +38,13 @@ dependencies when fixing renv.lock. Default: FALSE.}
 \item{versions}{Logical. If TRUE, check that package versions are
 consistent across DESCRIPTION constraints, renv.lock, and code
 install pins. Default: TRUE.}
+
+\item{fresh}{Logical. If TRUE, rebuild renv.lock from a clean code scan,
+re-resolving every package and its transitive dependencies to the current
+repository versions instead of preserving existing pins, and pruning
+packages no longer used by code. A deliberate version refresh (it can pull
+breaking updates); ordinary \code{auto_fix} keeps pinned versions.
+Routes through \code{\link{sync_packages}}. Default: FALSE.}
 
 \item{error_on_fail}{Logical. If TRUE, raise an error (rather than
 returning) when validation fails, so a non-interactive

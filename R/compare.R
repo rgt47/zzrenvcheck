@@ -20,6 +20,12 @@
 #' @param versions Logical. If TRUE, check that package versions are
 #'   consistent across DESCRIPTION constraints, renv.lock, and code
 #'   install pins. Default: TRUE.
+#' @param fresh Logical. If TRUE, rebuild renv.lock from a clean code scan,
+#'   re-resolving every package and its transitive dependencies to the current
+#'   repository versions instead of preserving existing pins, and pruning
+#'   packages no longer used by code. A deliberate version refresh (it can pull
+#'   breaking updates); ordinary \code{auto_fix} keeps pinned versions.
+#'   Routes through \code{\link{sync_packages}}. Default: FALSE.
 #' @param error_on_fail Logical. If TRUE, raise an error (rather than
 #'   returning) when validation fails, so a non-interactive
 #'   \command{Rscript} run exits with a non-zero status. The signalled
@@ -52,11 +58,23 @@ check_packages <- function(strict = TRUE,
                            validate_sources = auto_fix,
                            transitive = FALSE,
                            versions = TRUE,
+                           fresh = FALSE,
                            error_on_fail = FALSE,
                            path = ".") {
 
   if (cleanup) {
     return(sync_packages(strict = strict, path = path, verbose = verbose))
+  }
+
+  # fresh: rebuild renv.lock from a clean code scan, re-resolving every package
+  # and its transitive dependencies to current repo versions instead of keeping
+  # existing pins. Routes through sync_packages, which also prunes packages no
+  # longer used by code and syncs DESCRIPTION. Use after changing the base image
+  # or when a deliberate version bump is wanted; ordinary auto_fix preserves
+  # pinned versions.
+  if (fresh) {
+    return(sync_packages(strict = strict, path = path, verbose = verbose,
+                         transitive = TRUE, fresh = TRUE))
   }
 
   cli::cli_h1("Package Dependency Validation")
