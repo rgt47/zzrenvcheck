@@ -6,6 +6,14 @@
 #' Validates that all R packages used in code are properly declared in
 #' DESCRIPTION and locked in renv.lock for reproducibility.
 #'
+#' This complements, rather than replaces, \pkg{renv}. \pkg{renv} confirms the
+#' lockfile matches the \emph{installed} library; \code{check_packages()}
+#' confirms the code, DESCRIPTION, and lockfile all \emph{agree}. It is
+#' declaration-only: it reads source files and the two manifests and never
+#' inspects an installed library, so it runs without a container or an
+#' installed environment (for example on the host or in CI, while the container
+#' holds the real packages).
+#'
 #' @param strict Logical. If TRUE, scans tests/ and vignettes/ directories.
 #'   Default: TRUE.
 #' @param auto_fix Logical. If TRUE, automatically adds missing packages.

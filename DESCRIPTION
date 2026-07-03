@@ -8,6 +8,11 @@ Description: Validates that all R packages used in source code are properly
     declared in DESCRIPTION and locked in a 'renv' lockfile for
     reproducibility. Provides automatic detection of package usage,
     dependency validation, and auto-fix capabilities through the CRAN API.
+    Complements 'renv' rather than replacing it: 'renv' confirms the lockfile
+    matches the installed library, while this package confirms that code,
+    DESCRIPTION, and the lockfile agree. It is declaration-only, reading source
+    files and manifests rather than an installed library, so it runs without a
+    container or an installed environment.
 License: GPL (>= 3)
 Encoding: UTF-8
 Language: en-US
