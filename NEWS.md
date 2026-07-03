@@ -1,3 +1,20 @@
+# zzrenvcheck v0.6.0
+
+* Code scanning is now chunk-aware for R Markdown and Quarto. Only fenced
+  `` ```{r} `` code chunks and inline `` `r ...` `` spans are scanned for
+  package references; markdown and LaTeX prose is ignored. Previously a
+  `pkg::fn` written in prose (for example `\texttt{Exact::exact.test}` in a
+  methods description, or `remotes::install_github(...)` in install
+  instructions) was miscounted as a code dependency. Real usage in code chunks
+  and inline code is still detected.
+
+* `extract_code_packages()` (and therefore `check_packages()`) now honours
+  `.renvignore`. Files excluded from renv's dependency scan (for example a
+  host-rendered submission manuscript with its own toolchain) are excluded
+  here too, so the two scanners agree. A gitignore-lite subset is supported
+  (bare filenames, exact relative paths, globs, directory substrings); renv
+  itself continues to apply full gitignore semantics.
+
 # zzrenvcheck v0.5.0
 
 * `check_packages()` gains a `fresh` argument. When `TRUE` it rebuilds

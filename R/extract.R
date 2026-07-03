@@ -214,7 +214,78 @@ find_r_files <- function(dirs, path = ".") {
     }
   }
 
-  unique(files)
+  # Honour .renvignore so files excluded from renv's dependency scan (for
+  # example host-rendered manuscripts with their own toolchain) are excluded
+  # here too, keeping the two scanners in agreement.
+  filter_renvignore(unique(files), path)
+}
+
+#' Read .renvignore Patterns
+#'
+#' Reads the project's \code{.renvignore}, returning its non-empty,
+#' non-comment lines as patterns. Shared with renv so a single file governs
+#' which sources are excluded from dependency scanning.
+#'
+#' @param path Character. Project root.
+#' @return Character vector of patterns (possibly empty).
+#' @keywords internal
+load_renvignore <- function(path) {
+  f <- file.path(path, ".renvignore")
+  if (!file.exists(f)) {
+    return(character(0))
+  }
+  pats <- trimws(readLines(f, warn = FALSE))
+  pats[nzchar(pats) & !startsWith(pats, "#")]
+}
+
+#' Filter Files Against .renvignore Patterns
+#'
+#' Drops files whose project-relative path matches any \code{.renvignore}
+#' pattern. Supports a gitignore-lite subset: bare filenames, exact relative
+#' paths, glob patterns, and directory/path substrings (enough for the common
+#' exclusions; renv itself applies full gitignore semantics).
+#'
+#' @param files Character vector of absolute file paths.
+#' @param path Character. Project root.
+#' @return Filtered character vector.
+#' @keywords internal
+filter_renvignore <- function(files, path) {
+  patterns <- load_renvignore(path)
+  if (length(patterns) == 0 || length(files) == 0) {
+    return(files)
+  }
+  root <- normalizePath(path, mustWork = FALSE)
+  absf <- normalizePath(files, mustWork = FALSE)
+  rel <- substring(absf, nchar(root) + 2L)
+  keep <- !vapply(rel, renvignore_match, logical(1), patterns = patterns)
+  files[keep]
+}
+
+#' Match a Relative Path Against .renvignore Patterns
+#'
+#' @param rel Character. Project-relative file path.
+#' @param patterns Character vector of \code{.renvignore} patterns.
+#' @return TRUE if any pattern matches.
+#' @keywords internal
+renvignore_match <- function(rel, patterns) {
+  base <- basename(rel)
+  for (p in patterns) {
+    q <- sub("/$", "", sub("^/", "", p))
+    if (!nzchar(q)) {
+      next
+    }
+    if (identical(base, q) || identical(rel, q)) {
+      return(TRUE)
+    }
+    rx <- utils::glob2rx(q)
+    if (grepl(rx, base) || grepl(rx, rel)) {
+      return(TRUE)
+    }
+    if (grepl(q, rel, fixed = TRUE)) {
+      return(TRUE)
+    }
+  }
+  FALSE
 }
 
 #' Filter Skip Paths
@@ -280,6 +351,12 @@ extract_packages_from_file <- function(file, skip_comments = TRUE) {
     return(character(0))
   }
 
+  # In R Markdown / Quarto, only fenced ```{r} chunks and inline `r ...` are
+  # executable code; package references in the surrounding markdown/LaTeX prose
+  # (for example \texttt{pkg::fn} or install instructions) are documentation,
+  # not dependencies. Blank every non-code line so the extractors see code only.
+  lines <- mask_non_code_chunks(lines, file)
+
   # Remove comments if requested
   if (skip_comments) {
     # Keep roxygen comments (start with #')
@@ -308,6 +385,60 @@ extract_packages_from_file <- function(file, skip_comments = TRUE) {
   packages <- c(packages, roxygen_pkgs)
 
   packages
+}
+
+#' Mask Non-Code Lines in R Markdown / Quarto
+#'
+#' For \code{.Rmd}/\code{.qmd}/\code{.Rmarkdown} files, blanks every line that
+#' is not inside a fenced R code chunk, keeping inline R code spans in prose
+#' lines. Non-Rmd files pass through unchanged. This prevents package references
+#' in markdown or LaTeX prose (for example a namespaced call written inside
+#' \\texttt in a methods description, or install instructions) from being
+#' counted as code dependencies.
+#'
+#' @param lines Character vector of file lines.
+#' @param file Character. File path (used only for its extension).
+#' @return Character vector the same length as \code{lines}; non-code lines are
+#'   empty strings.
+#' @keywords internal
+mask_non_code_chunks <- function(lines, file) {
+
+  ext <- tolower(tools::file_ext(file))
+  if (!ext %in% c("rmd", "qmd", "rmarkdown")) {
+    return(lines)
+  }
+
+  # A chunk opens with a fence followed by '{r' (or '{R'), e.g. ```{r label}.
+  open <- grepl("^\\s*`{3,}\\s*\\{[rR][ ,}]", lines, perl = TRUE)
+  # A chunk closes with a bare fence line.
+  close <- grepl("^\\s*`{3,}\\s*$", lines, perl = TRUE)
+
+  out <- character(length(lines))
+  in_chunk <- FALSE
+  for (i in seq_along(lines)) {
+    if (!in_chunk && open[i]) {
+      in_chunk <- TRUE
+      next
+    }
+    if (in_chunk && close[i]) {
+      in_chunk <- FALSE
+      next
+    }
+    if (in_chunk) {
+      out[i] <- lines[i]
+    } else {
+      # Prose line: keep only inline `r ...` code spans, drop the rest.
+      inline <- regmatches(
+        lines[i],
+        gregexpr("`r +[^`]+`", lines[i], perl = TRUE)
+      )[[1]]
+      if (length(inline) > 0) {
+        out[i] <- paste(inline, collapse = " ")
+      }
+    }
+  }
+
+  out
 }
 
 #' Extract library() Calls

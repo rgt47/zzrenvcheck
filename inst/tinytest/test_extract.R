@@ -104,3 +104,41 @@ local({
   expect_false('ggplot2' %in% pkgs_without, info = 'comments: ggplot2 dropped')
   expect_false('tidyr' %in% pkgs_without, info = 'comments: tidyr dropped')
 })
+
+# Rmd: package refs in markdown/LaTeX prose are ignored; only code chunks count
+local({
+  d <- tempfile('rmd'); dir.create(file.path(d, 'analysis'), recursive = TRUE)
+  writeLines(c(
+    '---', 'title: t', '---',
+    'Compare to \\texttt{Exact::exact.test} and install via',
+    '\\texttt{remotes::install_github("x/y")}.',
+    'Inline `r glue::glue("hi")` counts as code.',
+    '```{r}', 'library(dplyr)', 'kableExtra::kbl(1)', '```'
+  ), file.path(d, 'analysis', 'report.Rmd'))
+  pkgs <- zzrenvcheck:::clean_package_names(
+    extract_code_packages(dirs = 'analysis', path = d))
+  expect_true('dplyr' %in% pkgs, info = 'chunk library() detected')
+  expect_true('kableExtra' %in% pkgs, info = 'chunk :: detected')
+  expect_true('glue' %in% pkgs, info = 'inline `r ...` detected')
+  expect_false('Exact' %in% pkgs, info = 'LaTeX prose :: ignored (Exact)')
+  expect_false('remotes' %in% pkgs, info = 'LaTeX prose :: ignored (remotes)')
+  unlink(d, recursive = TRUE)
+})
+
+# .renvignore excludes listed sources from the scan
+local({
+  d <- tempfile('ign'); dir.create(file.path(d, 'analysis'), recursive = TRUE)
+  writeLines(c('```{r}', 'library(dplyr)', '```'),
+             file.path(d, 'analysis', 'report.Rmd'))
+  writeLines(c('```{r}', 'library(pacman)', '```'),
+             file.path(d, 'analysis', 'paper.Rmd'))
+  before <- zzrenvcheck:::clean_package_names(
+    extract_code_packages(dirs = 'analysis', path = d))
+  expect_true('pacman' %in% before, info = 'paper.Rmd scanned without ignore')
+  writeLines('paper.Rmd', file.path(d, '.renvignore'))
+  after <- zzrenvcheck:::clean_package_names(
+    extract_code_packages(dirs = 'analysis', path = d))
+  expect_false('pacman' %in% after, info = '.renvignore drops paper.Rmd')
+  expect_true('dplyr' %in% after, info = '.renvignore keeps report.Rmd')
+  unlink(d, recursive = TRUE)
+})
