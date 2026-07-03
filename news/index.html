@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,11 @@
       <small>Source: <a href="https://github.com/rgt47/zzrenvcheck/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="zzrenvcheck-v060">zzrenvcheck v0.6.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v060"></a></h2>
+<ul><li><p>Code scanning is now chunk-aware for R Markdown and Quarto. Only fenced <code>```{r}</code> code chunks and inline <code>`r ...`</code> spans are scanned for package references; markdown and LaTeX prose is ignored. Previously a <code>pkg::fn</code> written in prose (for example <code>\texttt{Exact::exact.test}</code> in a methods description, or <code>remotes::install_github(...)</code> in install instructions) was miscounted as a code dependency. Real usage in code chunks and inline code is still detected.</p></li>
+<li><p><code><a href="../reference/extract_code_packages.html">extract_code_packages()</a></code> (and therefore <code><a href="../reference/check_packages.html">check_packages()</a></code>) now honours <code>.renvignore</code>. Files excluded from renv’s dependency scan (for example a host-rendered submission manuscript with its own toolchain) are excluded here too, so the two scanners agree. A gitignore-lite subset is supported (bare filenames, exact relative paths, globs, directory substrings); renv itself continues to apply full gitignore semantics.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="zzrenvcheck-v050">zzrenvcheck v0.5.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v050"></a></h2>
 <ul><li>

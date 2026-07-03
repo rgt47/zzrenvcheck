@@ -37,6 +37,7 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_roxygen_imports.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/fetch_bioc_info.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/fetch_cran_info.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/filter_renvignore.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/filter_skip_paths.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/find_r_files.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/fix_packages.html</loc></url>
@@ -53,6 +54,8 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/is_generic_word.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/is_installable.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/is_valid_package_name.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/load_renvignore.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/mask_non_code_chunks.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_all_deps.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_declared.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_imports.html</loc></url>
@@ -62,6 +65,7 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_renv_lock_versions.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/remove_from_description.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/remove_from_renv_lock.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/renvignore_match.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/report_packages.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/resolve_transitive_deps.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/show_manual_fix_instructions.html</loc></url>
