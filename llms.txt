@@ -25,6 +25,31 @@ leading to:
 - Syncs dependencies to code (removes unused, adds missing)
 - Works cross-platform (Windows/macOS/Linux)
 
+## Relationship to renv
+
+`zzrenvcheck` complements `renv`; it does not replace it. The two answer
+different questions:
+
+- **renv** confirms the lockfile matches what is actually **installed**
+  in the project library
+  ([`renv::snapshot()`](https://rstudio.github.io/renv/reference/snapshot.html)
+  /
+  [`renv::status()`](https://rstudio.github.io/renv/reference/status.html)
+  read the installed packages).
+- **zzrenvcheck** confirms the **code, `DESCRIPTION`, and `renv.lock`
+  all agree** about which packages the project declares.
+
+zzrenvcheck is **presence/declaration-only**: it reads source files and
+the two manifests and never inspects an installed library. That is why
+it needs no installed packages, no container, and no R at all in the
+shell version, and can run on the host or in CI while the container
+holds the real environment. renv guarantees installed-versus-locked;
+zzrenvcheck guarantees used-versus-declared-versus-locked. Neither alone
+covers both, so a typical pipeline runs
+[`renv::snapshot()`](https://rstudio.github.io/renv/reference/snapshot.html)
+where the packages are installed (the container) and the `zzrenvcheck`
+gate where the files live (the host or CI).
+
 ## Installation
 
 ### R Package (Recommended for R users)

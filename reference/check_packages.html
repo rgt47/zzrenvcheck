@@ -124,6 +124,16 @@ carries the result list in its <code>result</code> field. Default: FALSE.</p></d
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly returns a list with validation results</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>This complements, rather than replaces, <span class="pkg">renv</span>. <span class="pkg">renv</span> confirms the
+lockfile matches the <em>installed</em> library; <code>check_packages()</code>
+confirms the code, DESCRIPTION, and lockfile all <em>agree</em>. It is
+declaration-only: it reads source files and the two manifests and never
+inspects an installed library, so it runs without a container or an
+installed environment (for example on the host or in CI, while the container
+holds the real packages).</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

@@ -83,6 +83,16 @@ check_packages(
 
 Invisibly returns a list with validation results
 
+## Details
+
+This complements, rather than replaces, renv. renv confirms the lockfile
+matches the *installed* library; `check_packages()` confirms the code,
+DESCRIPTION, and lockfile all *agree*. It is declaration-only: it reads
+source files and the two manifests and never inspects an installed
+library, so it runs without a container or an installed environment (for
+example on the host or in CI, while the container holds the real
+packages).
+
 ## Examples
 
 ``` r

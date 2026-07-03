@@ -87,6 +87,18 @@
 </ul>
 </div>
 <div class="section level2">
+<h2 id="relationship-to-renv">Relationship to renv<a class="anchor" aria-label="anchor" href="#relationship-to-renv"></a>
+</h2>
+<p><code>zzrenvcheck</code> complements <code>renv</code>; it does not replace it. The two answer different questions:</p>
+<ul>
+<li>
+<strong>renv</strong> confirms the lockfile matches what is actually <strong>installed</strong> in the project library (<code><a href="https://rstudio.github.io/renv/reference/snapshot.html" class="external-link">renv::snapshot()</a></code> / <code><a href="https://rstudio.github.io/renv/reference/status.html" class="external-link">renv::status()</a></code> read the installed packages).</li>
+<li>
+<strong>zzrenvcheck</strong> confirms the <strong>code, <code>DESCRIPTION</code>, and <code>renv.lock</code> all agree</strong> about which packages the project declares.</li>
+</ul>
+<p>zzrenvcheck is <strong>presence/declaration-only</strong>: it reads source files and the two manifests and never inspects an installed library. That is why it needs no installed packages, no container, and no R at all in the shell version, and can run on the host or in CI while the container holds the real environment. renv guarantees installed-versus-locked; zzrenvcheck guarantees used-versus-declared-versus-locked. Neither alone covers both, so a typical pipeline runs <code><a href="https://rstudio.github.io/renv/reference/snapshot.html" class="external-link">renv::snapshot()</a></code> where the packages are installed (the container) and the <code>zzrenvcheck</code> gate where the files live (the host or CI).</p>
+</div>
+<div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="section level3">
