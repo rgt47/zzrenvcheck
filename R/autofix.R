@@ -16,10 +16,16 @@ handle_auto_fix_description <- function(packages, path = ".") {
   cli::cli_h3("Auto-Fixing DESCRIPTION")
   cli::cli_alert_info("Adding {length(packages)} package{?s} to DESCRIPTION...")
 
+  # Role-aware placement: a package used by the package's own code in R/ is a
+  # hard dependency (Imports); one used only by analysis/, scripts/, tests/, or
+  # vignettes/ is optional (Suggests).
+  r_pkgs <- clean_package_names(extract_code_packages(dirs = "R", path = path))
+
   failed <- character(0)
 
   for (pkg in packages) {
-    success <- add_to_description(pkg, path = path)
+    field <- if (pkg %in% r_pkgs) "Imports" else "Suggests"
+    success <- add_to_description(pkg, field = field, path = path)
     if (!success) {
       failed <- c(failed, pkg)
     }

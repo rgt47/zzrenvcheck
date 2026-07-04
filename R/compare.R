@@ -120,6 +120,10 @@ check_packages <- function(strict = TRUE,
   desc_imports <- parse_description_imports(path = path)
   desc_packages <- parse_description_declared(path = path)
 
+  # LinkingTo/Depends packages (e.g. Rcpp) are used structurally, not via
+  # library()/::, so the code scan never sees them; do not flag them as unused.
+  structural_packages <- parse_description_structural(path = path)
+
   renv_packages <- if (has_renv_lock(path)) {
     parse_renv_lock(path = path)
   } else {
@@ -148,7 +152,7 @@ check_packages <- function(strict = TRUE,
   }
 
   unused_in_desc <- setdiff(desc_packages, code_packages)
-  unused_in_desc <- setdiff(unused_in_desc, "renv")
+  unused_in_desc <- setdiff(unused_in_desc, c("renv", structural_packages))
 
   empty_versions <- data.frame(
     package = character(0),

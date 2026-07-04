@@ -87,6 +87,10 @@ sync_packages <- function(strict = TRUE,
   }
 
   desc_packages <- parse_description_declared(path = path)
+  # LinkingTo/Depends packages (e.g. Rcpp) are used structurally, not via
+  # library()/::, so the code scan never sees them. Never remove them from
+  # DESCRIPTION or renv.lock just because they are absent from the code scan.
+  structural <- parse_description_structural(path = path)
   renv_packages <- if (has_renv_lock(path)) {
     parse_renv_lock(path = path)
   } else {
@@ -101,7 +105,7 @@ sync_packages <- function(strict = TRUE,
   }
 
   to_add_desc <- setdiff(code_packages, desc_packages)
-  to_remove_desc <- setdiff(desc_packages, c(code_packages, "renv"))
+  to_remove_desc <- setdiff(desc_packages, c(code_packages, structural, "renv"))
 
   if (transitive && has_renv_lock(path) && length(code_packages) > 0) {
     db <- available.packages()
@@ -110,11 +114,11 @@ sync_packages <- function(strict = TRUE,
     # fresh: re-add the whole closure so every entry is overwritten at the
     # current repo version. Otherwise add only what is missing, preserving pins.
     to_add_lock <- if (fresh) resolved_names else setdiff(resolved_names, renv_packages)
-    to_remove_lock <- setdiff(renv_packages, c(resolved_names, "renv"))
+    to_remove_lock <- setdiff(renv_packages, c(resolved_names, structural, "renv"))
   } else {
     db <- NULL
     to_add_lock <- if (fresh) code_packages else setdiff(code_packages, renv_packages)
-    to_remove_lock <- setdiff(renv_packages, c(code_packages, "renv"))
+    to_remove_lock <- setdiff(renv_packages, c(code_packages, structural, "renv"))
   }
 
   changes <- list(
@@ -131,8 +135,12 @@ sync_packages <- function(strict = TRUE,
     cli::cli_ul(to_add_desc)
 
     if (!dry_run) {
+      # Role-aware placement: R/ deps -> Imports, everything else -> Suggests.
+      r_pkgs <- clean_package_names(
+        extract_code_packages(dirs = "R", path = path))
       for (pkg in to_add_desc) {
-        success <- add_to_description(pkg, path = path)
+        field <- if (pkg %in% r_pkgs) "Imports" else "Suggests"
+        success <- add_to_description(pkg, field = field, path = path)
         if (success) {
           changes$added_to_description <- c(changes$added_to_description, pkg)
         } else {

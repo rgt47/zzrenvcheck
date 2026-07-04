@@ -206,6 +206,29 @@ parse_description_declared <- function(path = ".") {
   })
 }
 
+#' Parse Structural DESCRIPTION Dependencies
+#'
+#' Returns packages declared in \code{LinkingTo} or \code{Depends}. These are
+#' used structurally, via compiled linkage (\code{LinkingTo}, e.g. \pkg{Rcpp})
+#' or attachment (\code{Depends}), rather than through \code{library()} or
+#' \code{::} in R source, so the code scanner never sees them. They must not be
+#' reported as unused or removed during sync/auto-fix. The base pseudo-package
+#' \code{R} (from a \code{Depends: R (>= x)} constraint) is excluded.
+#'
+#' @param path Character. Path to project root.
+#' @return Character vector of package names (sorted, deduplicated).
+#' @keywords internal
+parse_description_structural <- function(path = ".") {
+  deps <- parse_description_all_deps(
+    path = path,
+    types = c("LinkingTo", "Depends")
+  )
+  if (nrow(deps) == 0) {
+    return(character(0))
+  }
+  sort(unique(setdiff(deps$package, "R")))
+}
+
 #' Parse Version-Pinned DESCRIPTION Remotes
 #'
 #' Extracts package version pins from the \code{Remotes:} field of a
