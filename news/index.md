@@ -1,5 +1,20 @@
 # Changelog
 
+## zzrenvcheck v0.7.0
+
+- Auto-fix now places packages by role. A package used by the
+  compendium’s own code in `R/` is added to `Imports`; one used only by
+  `analysis/`, `scripts/`, `tests/`, or `vignettes/` is added to
+  `Suggests`. Previously every added package went to `Imports`.
+
+- Structural dependencies are honoured. Packages declared in `LinkingTo`
+  or `Depends` (for example `Rcpp` for compiled code) are used via
+  linkage or attachment, not
+  [`library()`](https://rdrr.io/r/base/library.html)/`::`, so the code
+  scanner never sees them. They are no longer reported as unused, and
+  `sync`/`fresh` no longer removes them from `DESCRIPTION` or
+  `renv.lock`.
+
 ## zzrenvcheck v0.6.0
 
 - Code scanning is now chunk-aware for R Markdown and Quarto. Only

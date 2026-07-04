@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,11 @@
       <small>Source: <a href="https://github.com/rgt47/zzrenvcheck/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.0" id="zzrenvcheck-v070">zzrenvcheck v0.7.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v070"></a></h2>
+<ul><li><p>Auto-fix now places packages by role. A package used by the compendium’s own code in <code>R/</code> is added to <code>Imports</code>; one used only by <code>analysis/</code>, <code>scripts/</code>, <code>tests/</code>, or <code>vignettes/</code> is added to <code>Suggests</code>. Previously every added package went to <code>Imports</code>.</p></li>
+<li><p>Structural dependencies are honoured. Packages declared in <code>LinkingTo</code> or <code>Depends</code> (for example <code>Rcpp</code> for compiled code) are used via linkage or attachment, not <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code>/<code>::</code>, so the code scanner never sees them. They are no longer reported as unused, and <code>sync</code>/<code>fresh</code> no longer removes them from <code>DESCRIPTION</code> or <code>renv.lock</code>.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="zzrenvcheck-v060">zzrenvcheck v0.6.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v060"></a></h2>
 <ul><li><p>Code scanning is now chunk-aware for R Markdown and Quarto. Only fenced <code>```{r}</code> code chunks and inline <code>`r ...`</code> spans are scanned for package references; markdown and LaTeX prose is ignored. Previously a <code>pkg::fn</code> written in prose (for example <code>\texttt{Exact::exact.test}</code> in a methods description, or <code>remotes::install_github(...)</code> in install instructions) was miscounted as a code dependency. Real usage in code chunks and inline code is still detected.</p></li>
