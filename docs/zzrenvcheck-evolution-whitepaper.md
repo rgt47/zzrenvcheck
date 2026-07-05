@@ -124,5 +124,5 @@ closure, `DESCRIPTION` declares roles) that `zzrenvcheck` enforces on the host
 while `renv` enforces installation in the container.
 
 ---
-*Rendered on 2026-07-04 at 15:35 PDT.*<br>
+*Rendered on 2026-07-04 at 15:46 PDT.*<br>
 *Source: ~/prj/sfw/08-zzrenvcheck/zzrenvcheck/docs/zzrenvcheck-evolution-whitepaper.md*
