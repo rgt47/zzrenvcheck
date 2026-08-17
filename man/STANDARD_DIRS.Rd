@@ -7,6 +7,12 @@
 STANDARD_DIRS
 }
 \description{
-Default directories scanned in standard (non-strict) mode.
+Default directories scanned in standard (non-strict) mode. Excludes
+"." (the project root) because scanning is recursive
+(\code{extract_code_packages()} passes \code{recursive = TRUE}), so
+including "." would recurse into \code{tests/} and
+\code{vignettes/} regardless of \code{strict}, defeating the
+standard/strict distinction, and would double-count files already
+reached via "R".
 }
 \keyword{internal}

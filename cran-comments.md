@@ -33,6 +33,14 @@ reflects an outdated HTML Tidy binary on the checking machine (for example
 the version Apple bundles with macOS), not the package, and does not occur
 on the CRAN check machines.
 
+Note to maintainer (2026-08-16): a prior local run of this package
+surfaced 3 NOTEs, not 1, because `.zzcollab-state`, `dev-docs`,
+`tooling.lock`, and `zzcollab.yaml` (workspace scaffolding files) were
+not excluded from the build and were packed into the tarball. These
+have been added to `.Rbuildignore`; re-run `R CMD check --as-cran`
+before the next submission to confirm the tarball is back down to the
+single expected 'New submission' note.
+
 ## Reverse dependencies
 
 None. This is a new package with no reverse dependencies.

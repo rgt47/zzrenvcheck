@@ -9,7 +9,8 @@
 #' @keywords internal
 BASE_PACKAGES <- c(
   "base", "utils", "stats", "graphics", "grDevices",
-  "methods", "datasets", "tools", "grid", "parallel"
+  "methods", "datasets", "tools", "grid", "parallel",
+  "splines", "stats4", "compiler", "tcltk"
 )
 
 #' Placeholder Package Names
@@ -108,14 +109,21 @@ REPRO_FILES <- c("Dockerfile", "install.sh", "Makefile", ".Rprofile")
 
 #' Standard Directories to Scan
 #'
-#' Default directories scanned in standard (non-strict) mode.
+#' Default directories scanned in standard (non-strict) mode. Excludes
+#' "." (the project root) because scanning is recursive
+#' (\code{extract_code_packages()} passes \code{recursive = TRUE}), so
+#' including "." would recurse into \code{tests/} and
+#' \code{vignettes/} regardless of \code{strict}, defeating the
+#' standard/strict distinction, and would double-count files already
+#' reached via "R".
 #'
 #' @keywords internal
-STANDARD_DIRS <- c(".", "R", "scripts", "analysis")
+STANDARD_DIRS <- c("R", "scripts", "analysis")
 
 #' Strict Mode Directories
 #'
-#' All directories scanned in strict mode (includes tests and vignettes).
+#' All directories scanned in strict mode (includes tests and
+#' vignettes). See \code{STANDARD_DIRS} for why "." is not listed.
 #'
 #' @keywords internal
-STRICT_DIRS <- c(".", "R", "scripts", "analysis", "tests", "vignettes", "inst")
+STRICT_DIRS <- c("R", "scripts", "analysis", "tests", "vignettes", "inst")

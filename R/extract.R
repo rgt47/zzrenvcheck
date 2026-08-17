@@ -448,8 +448,11 @@ mask_non_code_chunks <- function(lines, file) {
 #' @keywords internal
 extract_library_calls <- function(lines) {
 
-  # Pattern: library(pkg) or library("pkg") or library('pkg')
-  pattern <- "library\\s*\\(\\s*['\"]?([a-zA-Z][a-zA-Z0-9.]*)['\"]?\\s*\\)"
+  # Pattern: library(pkg), library("pkg"), library('pkg'), or with
+  # trailing arguments such as library(pkg, quietly = TRUE). Matches
+  # up to the package name followed by a comma or closing paren, not
+  # requiring the call to close immediately after the name.
+  pattern <- "library\\s*\\(\\s*['\"]?([a-zA-Z][a-zA-Z0-9.]*)['\"]?\\s*[,)]"
 
   matches <- regmatches(lines, gregexpr(pattern, lines, perl = TRUE))
 
@@ -473,8 +476,9 @@ extract_library_calls <- function(lines) {
 #' @keywords internal
 extract_require_calls <- function(lines) {
 
-  # Pattern: require(pkg) or require("pkg") or require('pkg')
-  pattern <- "require\\s*\\(\\s*['\"]?([a-zA-Z][a-zA-Z0-9.]*)['\"]?\\s*\\)"
+  # Pattern: require(pkg), require("pkg"), require('pkg'), or with
+  # trailing arguments such as require(pkg, quietly = TRUE).
+  pattern <- "require\\s*\\(\\s*['\"]?([a-zA-Z][a-zA-Z0-9.]*)['\"]?\\s*[,)]"
 
   matches <- regmatches(lines, gregexpr(pattern, lines, perl = TRUE))
 

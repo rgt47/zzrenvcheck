@@ -1,5 +1,9 @@
 ^cran-comments\.md$
 ^zzrenvcheck_.*\.tar\.gz$
+^\.zzcollab-state$
+^dev-docs$
+^tooling\.lock$
+^zzcollab\.yaml$
 ^renv$
 ^renv\.lock$
 ^\.Rprofile$

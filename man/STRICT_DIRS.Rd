@@ -7,6 +7,7 @@
 STRICT_DIRS
 }
 \description{
-All directories scanned in strict mode (includes tests and vignettes).
+All directories scanned in strict mode (includes tests and
+vignettes). See \code{STANDARD_DIRS} for why "." is not listed.
 }
 \keyword{internal}
