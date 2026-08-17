@@ -43,10 +43,10 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Ronald (Ryy) G Thomas <rgthomas@ucsd.edu>
+**Maintainer**: Ronald G. Thomas <rgthomas@ucsd.edu>
 ([ORCID](https://orcid.org/0000-0003-1686-4965))
 
 Authors:
 
-- Ronald (Ryy) G Thomas <rgthomas@ucsd.edu>
+- Ronald G. Thomas <rgthomas@ucsd.edu>
   ([ORCID](https://orcid.org/0000-0003-1686-4965))
