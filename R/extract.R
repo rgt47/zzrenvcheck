@@ -380,6 +380,11 @@ extract_packages_from_file <- function(file, skip_comments = TRUE) {
   ns_pkgs <- extract_namespace_calls(lines)
   packages <- c(packages, ns_pkgs)
 
+  # Extract requireNamespace()/loadNamespace(), the optional-dependency
+  # idiom, which neither of the patterns above matches
+  nsload_pkgs <- extract_namespace_load_calls(lines)
+  packages <- c(packages, nsload_pkgs)
+
   # Extract roxygen imports
   roxygen_pkgs <- extract_roxygen_imports(lines)
   packages <- c(packages, roxygen_pkgs)
@@ -504,21 +509,104 @@ extract_require_calls <- function(lines) {
 #' @keywords internal
 extract_namespace_calls <- function(lines) {
 
-  # Pattern: pkg:: (package name followed by ::)
-  pattern <- "([a-zA-Z][a-zA-Z0-9.]*)::"
+  # A namespaced call carries no quotes, so string literals and
+  # trailing comments can be blanked first. Without that, a package
+  # named inside a message or an end-of-line note was reported as a
+  # dependency: `msg <- "see dplyr::filter"` and `x <- 1  # dplyr::f`
+  # both counted.
+  lines <- mask_strings_and_comments(lines)
+
+  # Pattern: pkg:: or pkg ::, allowing space before the operator, which
+  # R permits and which was previously missed.
+  pattern <- "([a-zA-Z][a-zA-Z0-9.]*)\\s*::"
 
   matches <- regmatches(lines, gregexpr(pattern, lines, perl = TRUE))
 
-  # Extract package names (remove ::)
+  # Extract package names (remove the operator and any spacing)
   pkgs <- character(0)
   for (match_vec in matches) {
     if (length(match_vec) > 0 && match_vec[1] != "") {
-      # Remove :: from each match
-      pkg <- sub("::", "", match_vec, fixed = TRUE)
+      pkg <- sub("\\s*::$", "", match_vec, perl = TRUE)
       pkgs <- c(pkgs, pkg)
     }
   }
 
+  pkgs
+}
+
+#' Blank String Literals and Trailing Comments
+#'
+#' Replaces the contents of quoted spans with spaces and removes
+#' end-of-line comments, so that patterns which cannot legitimately
+#' appear inside a string (namespaced calls) are not matched there.
+#' Quoting state is tracked per line; a \code{#} inside a string does
+#' not start a comment. A string spanning several lines is not tracked
+#' across the break, which is rare in R source and errs toward keeping
+#' code rather than dropping it.
+#'
+#' @param lines Character vector of file lines.
+#' @return Character vector the same length as \code{lines}.
+#' @keywords internal
+mask_strings_and_comments <- function(lines) {
+  vapply(lines, function(ln) {
+    ch <- strsplit(ln, "", fixed = TRUE)[[1]]
+    if (!length(ch)) {
+      return(ln)
+    }
+    out <- ch
+    quote_ch <- ""
+    i <- 1L
+    n <- length(ch)
+    while (i <= n) {
+      c_i <- ch[i]
+      if (nzchar(quote_ch)) {
+        if (c_i == "\\") {
+          out[i] <- " "
+          if (i < n) out[i + 1L] <- " "
+          i <- i + 2L
+          next
+        }
+        if (c_i == quote_ch) {
+          quote_ch <- ""
+        } else {
+          out[i] <- " "
+        }
+      } else if (c_i == "\"" || c_i == "'") {
+        quote_ch <- c_i
+      } else if (c_i == "#") {
+        out[i:n] <- " "
+        break
+      }
+      i <- i + 1L
+    }
+    paste(out, collapse = "")
+  }, character(1), USE.NAMES = FALSE)
+}
+
+#' Extract requireNamespace() and loadNamespace() Calls
+#'
+#' These are the standard idioms for using an optional dependency, the
+#' form CRAN expects for anything in \code{Suggests}. They were not
+#' recognised: \code{requireNamespace("pkg")} matched neither the
+#' \code{require(} pattern, because \code{requireNamespace} is not
+#' followed by a parenthesis at that point, nor the \code{::} pattern.
+#' A package used only through this idiom was reported as undeclared
+#' nowhere and silently omitted from the dependency set.
+#'
+#' @param lines Character vector of file lines.
+#' @return Character vector of package names.
+#' @keywords internal
+extract_namespace_load_calls <- function(lines) {
+  pattern <- paste0("(?:requireNamespace|loadNamespace)\\s*\\(\\s*",
+                    "['\"]([a-zA-Z][a-zA-Z0-9.]*)['\"]")
+  m <- regmatches(lines, gregexpr(pattern, lines, perl = TRUE))
+  pkgs <- character(0)
+  for (mv in m) {
+    if (length(mv) > 0 && mv[1] != "") {
+      pkgs <- c(pkgs, sub(paste0(".*['\"]([a-zA-Z][a-zA-Z0-9.]*)['\"].*"),
+                          "\\1", mv, perl = TRUE))
+    }
+  }
   pkgs
 }
 
