@@ -66,7 +66,7 @@
   `version_conflicts` element.
 - Added
   [`extract_code_package_versions()`](https://rgt47.github.io/zzrenvcheck/reference/extract_code_package_versions.md),
-  which extracts version-pinned installs from code. Recognised forms are
+  which extracts version-pinned installs from code. Recognized forms are
   pak and renv `@`-syntax (`pak::pak('dplyr@1.1.0')`, including
   vectorised and multi-argument calls) and the `remotes`/`devtools`
   `install_version()` function (named, positional, or
@@ -80,8 +80,8 @@
   [`check_packages()`](https://rgt47.github.io/zzrenvcheck/reference/check_packages.md).
   When `TRUE`, a failing validation raises a
   `zzrenvcheck_validation_failure` condition so that a non-interactive
-  `Rscript` run exits non-zero, matching the shell script’s behaviour.
-  Default `FALSE` preserves the returned-result behaviour.
+  `Rscript` run exits non-zero, matching the shell script’s behavior.
+  Default `FALSE` preserves the returned-result behavior.
 - The shell validator (`modules/validation.sh`) mirrors all of the above
   through `check_version_conflicts()` and exits non-zero on any
   conflict.

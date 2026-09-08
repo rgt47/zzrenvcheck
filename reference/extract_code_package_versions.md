@@ -2,7 +2,7 @@
 
 Scans source files for package installation calls that pin an exact
 version, recording the package name together with the pinned version.
-Recognised forms are documented in `CODE_PIN_PATTERNS`: pak and renv
+Recognized forms are documented in `CODE_PIN_PATTERNS`: pak and renv
 `@`-syntax (`pak::pak('dplyr@1.1.0')`) and the `version=` argument of
 `remotes`/`devtools` `install_version()`.
 

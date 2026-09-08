@@ -2,7 +2,7 @@
 
 Patterns used by
 [`extract_code_package_versions()`](https://rgt47.github.io/zzrenvcheck/reference/extract_code_package_versions.md)
-to recognise version-pinned package installs. Two grammars are
+to recognize version-pinned package installs. Two grammars are
 supported:
 
 - `@`-syntax: `pak::pak('dplyr@1.1.0')`, `pak('dplyr@1.1.0')`,

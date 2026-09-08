@@ -40,8 +40,8 @@ detect_version_conflicts(desc_deps, lock_versions, code_versions)
 
   Data frame of exact pins with columns `package`, `version`, and
   optionally `source` (a label such as `"code"` or
-  `"DESCRIPTION Remotes"`). When `source` is absent every pin is
-  labelled `"code"`.
+  `"DESCRIPTION Remotes"`). When `source` is absent every pin is labeled
+  `"code"`.
 
 ## Value
 
