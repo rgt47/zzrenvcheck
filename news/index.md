@@ -1,5 +1,46 @@
 # Changelog
 
+## zzrenvcheck 0.8.0
+
+### Correctness fixes
+
+- **[`requireNamespace()`](https://rdrr.io/r/base/ns-load.html) and
+  [`loadNamespace()`](https://rdrr.io/r/base/ns-load.html) are now
+  recognised.** These are the standard idioms for using an optional
+  dependency, and the form CRAN expects for anything in `Suggests`.
+  Neither matched the `require(` pattern, because `requireNamespace` is
+  not followed by a parenthesis at that point, nor the `::` pattern,
+  which needs the operator. A package used only through this idiom was
+  therefore absent from the extracted dependency set: the package
+  reported nothing wrong while the dependency went undeclared, which is
+  precisely the failure this package exists to prevent.
+
+- **A namespaced call with space around the operator is now found.** R
+  accepts `pkg :: fn()`; the pattern required `pkg::` with no space, so
+  such a call was missed.
+
+- **Package names in comments and string literals are no longer
+  counted.** Comment stripping was line-based, matching only lines that
+  begin with `#`, so a trailing comment such as
+  `x <- 1 # see dplyr::filter` contributed `dplyr`, as did any string
+  containing a namespaced call. Both produced spurious “used in code but
+  not declared” findings, which `check_packages(auto_fix = TRUE)` would
+  then act on by adding a dependency the project does not have. The `::`
+  extractor now runs over lines whose string contents and end-of-line
+  comments have been blanked by a new internal
+  [`mask_strings_and_comments()`](https://rgt47.github.io/zzrenvcheck/reference/mask_strings_and_comments.md).
+  [`library()`](https://rdrr.io/r/base/library.html) and
+  [`require()`](https://rdrr.io/r/base/library.html) still see the raw
+  lines, since they legitimately take a quoted name.
+
+### Tests
+
+- New `test_extract_idioms.R` covers every idiom above in both
+  directions: the three that were missed, the three that were counted in
+  error, and the seven that already worked, so a future change cannot
+  fix one direction by breaking the other.
+- Suite grows from 150 assertions to 170.
+
 ## zzrenvcheck v0.7.0
 
 - Auto-fix now places packages by role. A package used by the

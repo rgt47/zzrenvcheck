@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,20 @@
       <small>Source: <a href="https://github.com/rgt47/zzrenvcheck/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.0" id="zzrenvcheck-080">zzrenvcheck 0.8.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-080"></a></h2>
+<div class="section level3">
+<h3 id="correctness-fixes-0-8-0">Correctness fixes<a class="anchor" aria-label="anchor" href="#correctness-fixes-0-8-0"></a></h3>
+<ul><li><p><strong><code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code> and <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">loadNamespace()</a></code> are now recognised.</strong> These are the standard idioms for using an optional dependency, and the form CRAN expects for anything in <code>Suggests</code>. Neither matched the <code>require(</code> pattern, because <code>requireNamespace</code> is not followed by a parenthesis at that point, nor the <code>::</code> pattern, which needs the operator. A package used only through this idiom was therefore absent from the extracted dependency set: the package reported nothing wrong while the dependency went undeclared, which is precisely the failure this package exists to prevent.</p></li>
+<li><p><strong>A namespaced call with space around the operator is now found.</strong> R accepts <code>pkg :: fn()</code>; the pattern required <code>pkg::</code> with no space, so such a call was missed.</p></li>
+<li><p><strong>Package names in comments and string literals are no longer counted.</strong> Comment stripping was line-based, matching only lines that begin with <code>#</code>, so a trailing comment such as <code>x &lt;- 1  # see dplyr::filter</code> contributed <code>dplyr</code>, as did any string containing a namespaced call. Both produced spurious “used in code but not declared” findings, which <code>check_packages(auto_fix = TRUE)</code> would then act on by adding a dependency the project does not have. The <code>::</code> extractor now runs over lines whose string contents and end-of-line comments have been blanked by a new internal <code><a href="../reference/mask_strings_and_comments.html">mask_strings_and_comments()</a></code>. <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> and <code><a href="https://rdrr.io/r/base/library.html" class="external-link">require()</a></code> still see the raw lines, since they legitimately take a quoted name.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-0-8-0">Tests<a class="anchor" aria-label="anchor" href="#tests-0-8-0"></a></h3>
+<ul><li>New <code>test_extract_idioms.R</code> covers every idiom above in both directions: the three that were missed, the three that were counted in error, and the seven that already worked, so a future change cannot fix one direction by breaking the other.</li>
+<li>Suite grows from 150 assertions to 170.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="zzrenvcheck-v070">zzrenvcheck v0.7.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-v070"></a></h2>
 <ul><li><p>Auto-fix now places packages by role. A package used by the compendium’s own code in <code>R/</code> is added to <code>Imports</code>; one used only by <code>analysis/</code>, <code>scripts/</code>, <code>tests/</code>, or <code>vignettes/</code> is added to <code>Suggests</code>. Previously every added package went to <code>Imports</code>.</p></li>

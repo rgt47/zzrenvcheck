@@ -32,6 +32,7 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_code_packages.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_library_calls.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_namespace_calls.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_namespace_load_calls.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_packages_from_file.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_require_calls.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/extract_roxygen_imports.html</loc></url>
@@ -56,6 +57,7 @@
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/is_valid_package_name.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/load_renvignore.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/mask_non_code_chunks.html</loc></url>
+<url><loc>https://rgt47.github.io/zzrenvcheck/reference/mask_strings_and_comments.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_all_deps.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_declared.html</loc></url>
 <url><loc>https://rgt47.github.io/zzrenvcheck/reference/parse_description_imports.html</loc></url>
