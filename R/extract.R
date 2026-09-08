@@ -62,7 +62,7 @@ extract_code_packages <- function(dirs = c("R", "scripts", "analysis"),
 #'
 #' Scans source files for package installation calls that pin an exact
 #' version, recording the package name together with the pinned version.
-#' Recognised forms are documented in \code{CODE_PIN_PATTERNS}: pak and
+#' Recognized forms are documented in \code{CODE_PIN_PATTERNS}: pak and
 #' renv \code{@@}-syntax (\code{pak::pak('dplyr@@1.1.0')}) and the
 #' \code{version=} argument of \code{remotes}/\code{devtools}
 #' \code{install_version()}.

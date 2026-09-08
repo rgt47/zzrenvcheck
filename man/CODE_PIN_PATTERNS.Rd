@@ -7,7 +7,7 @@
 CODE_PIN_PATTERNS
 }
 \description{
-Patterns used by \code{extract_code_package_versions()} to recognise
+Patterns used by \code{extract_code_package_versions()} to recognize
 version-pinned package installs. Two grammars are supported:
 \itemize{
 \item \code{@}-syntax: \code{pak::pak('dplyr@1.1.0')},

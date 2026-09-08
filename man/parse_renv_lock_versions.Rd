@@ -20,6 +20,6 @@ is absent or empty.
 Extracts package names and their locked exact versions from an
 renv.lock file. Unlike \code{parse_renv_lock()}, which returns names
 only, this retains the \code{Version} recorded for each package so
-that cross-document version synchronisation can be validated.
+that cross-document version synchronization can be validated.
 }
 \keyword{internal}

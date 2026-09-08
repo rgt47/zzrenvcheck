@@ -10,7 +10,7 @@ REPRO_FILES
 Non-R project files that commonly carry version-pinned install
 commands and can therefore drift from \code{renv.lock}. These are
 scanned by \code{extract_code_package_versions()} only (the
-version-synchronisation check); they are deliberately excluded from
+version-synchronization check); they are deliberately excluded from
 the plain package-name scan, where build tooling and shell commands
 would generate false positives.
 }

@@ -465,7 +465,7 @@ version_satisfies <- function(version, constraint) {
 #' @param code_versions Data frame of exact pins with columns
 #'   \code{package}, \code{version}, and optionally \code{source} (a label
 #'   such as \code{"code"} or \code{"DESCRIPTION Remotes"}). When
-#'   \code{source} is absent every pin is labelled \code{"code"}.
+#'   \code{source} is absent every pin is labeled \code{"code"}.
 #'
 #' @return Data frame with columns \code{package}, \code{description},
 #'   \code{lock}, \code{code}, and \code{issue}; zero rows when no

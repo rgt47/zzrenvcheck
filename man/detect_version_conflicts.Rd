@@ -16,7 +16,7 @@ with columns \code{package}, \code{version}.}
 \item{code_versions}{Data frame of exact pins with columns
 \code{package}, \code{version}, and optionally \code{source} (a label
 such as \code{"code"} or \code{"DESCRIPTION Remotes"}). When
-\code{source} is absent every pin is labelled \code{"code"}.}
+\code{source} is absent every pin is labeled \code{"code"}.}
 }
 \value{
 Data frame with columns \code{package}, \code{description},
