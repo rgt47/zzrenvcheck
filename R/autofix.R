@@ -140,18 +140,97 @@ add_to_description <- function(package, field = "Imports", path = ".") {
   })
 }
 
-#' Add Package to renv.lock
+#' Build a renv.lock Entry from an Installed Package
 #'
-#' Adds a package entry to renv.lock by querying CRAN API.
+#' Reads the DESCRIPTION of the copy of \code{package} found on
+#' \code{lib.loc} and returns the lockfile entry that records the version
+#' actually installed, with its source: GitHub remote fields when the
+#' package was installed from GitHub, otherwise the \code{Repository} field
+#' (for example \code{CRAN} or \code{RSPM}).
 #'
 #' @param package Character. Package name.
-#' @param version Character. Package version. If NULL, fetches from CRAN.
+#' @param lib.loc Character vector of library paths, or NULL for
+#'   \code{.libPaths()}.
+#'
+#' @return A named list suitable for \code{renv.lock}'s \code{Packages}
+#'   section, or NULL when the package is not installed.
+#'
+#' @keywords internal
+installed_lock_entry <- function(package, lib.loc = NULL) {
+  pkg_path <- find.package(package, lib.loc = lib.loc, quiet = TRUE)
+  if (length(pkg_path) == 0) {
+    return(NULL)
+  }
+
+  fields <- c(
+    "Version", "Repository", "RemoteType", "RemoteHost",
+    "RemoteUsername", "RemoteRepo", "RemoteRef", "RemoteSha"
+  )
+  dcf <- tryCatch(
+    read.dcf(file.path(pkg_path[1], "DESCRIPTION"), fields = fields),
+    error = function(e) NULL
+  )
+  if (is.null(dcf) || is.na(dcf[1, "Version"])) {
+    return(NULL)
+  }
+  field <- function(name) {
+    value <- dcf[1, name]
+    if (is.na(value) || !nzchar(value)) NULL else unname(value)
+  }
+
+  remote_type <- field("RemoteType")
+  if (identical(remote_type, "github")) {
+    entry <- list(
+      Package = package,
+      Version = field("Version"),
+      Source = "GitHub",
+      RemoteType = "github",
+      RemoteHost = if (is.null(field("RemoteHost"))) {
+        "api.github.com"
+      } else {
+        field("RemoteHost")
+      },
+      RemoteUsername = field("RemoteUsername"),
+      RemoteRepo = field("RemoteRepo"),
+      RemoteRef = field("RemoteRef"),
+      RemoteSha = field("RemoteSha")
+    )
+    return(Filter(Negate(is.null), entry))
+  }
+
+  list(
+    Package = package,
+    Version = field("Version"),
+    Source = "Repository",
+    Repository = if (is.null(field("Repository"))) {
+      "CRAN"
+    } else {
+      field("Repository")
+    }
+  )
+}
+
+#' Add Package to renv.lock
+#'
+#' Adds a package entry to renv.lock. When \code{version} is NULL, the entry
+#' records the version installed in the current library (see
+#' \code{installed_lock_entry()}), so the lockfile matches the environment
+#' the code was run in. Only when the package is not installed does it fall
+#' back to the current CRAN version, and it says so.
+#'
+#' @param package Character. Package name.
+#' @param version Character. Package version. If NULL, the installed
+#'   version is used, falling back to the current CRAN version when the
+#'   package is not installed.
 #' @param path Character. Path to project root.
+#' @param lib.loc Character vector of library paths searched for the
+#'   installed package, or NULL for \code{.libPaths()}.
 #'
 #' @return Logical indicating success
 #'
 #' @keywords internal
-add_to_renv_lock <- function(package, version = NULL, path = ".") {
+add_to_renv_lock <- function(package, version = NULL, path = ".",
+                             lib.loc = NULL) {
 
   lock_file <- file.path(path, "renv.lock")
 
@@ -160,38 +239,51 @@ add_to_renv_lock <- function(package, version = NULL, path = ".") {
     return(FALSE)
   }
 
-  # Fetch version from CRAN if not provided
+  pkg_entry <- NULL
+  origin <- "given"
+
   if (is.null(version)) {
+    pkg_entry <- installed_lock_entry(package, lib.loc = lib.loc)
+    origin <- "installed"
+  }
+
+  if (is.null(version) && is.null(pkg_entry)) {
     pkg_info <- fetch_cran_info(package)
 
     if (is.null(pkg_info)) {
-      cli::cli_alert_danger("Package {.pkg {package}} not found on CRAN")
+      cli::cli_alert_danger(
+        "Package {.pkg {package}} is not installed and not found on CRAN"
+      )
       return(FALSE)
     }
 
     version <- pkg_info$Version
+    origin <- "cran"
+    cli::cli_alert_warning(paste0(
+      "{.pkg {package}} is not installed; recording the current CRAN ",
+      "version ({version}). Install it and re-run to lock the version ",
+      "you actually use."
+    ))
   }
 
-  tryCatch({
-    # Read renv.lock
-    lock_data <- jsonlite::fromJSON(lock_file, simplifyVector = FALSE)
-
-    # Create package entry
+  if (is.null(pkg_entry)) {
     pkg_entry <- list(
       Package = package,
       Version = version,
       Source = "Repository",
       Repository = "CRAN"
     )
+  }
 
-    # Add to Packages section
+  tryCatch({
+    lock_data <- jsonlite::fromJSON(lock_file, simplifyVector = FALSE)
+
     if (is.null(lock_data$Packages)) {
       lock_data$Packages <- list()
     }
 
     lock_data$Packages[[package]] <- pkg_entry
 
-    # Write back to file
     jsonlite::write_json(
       lock_data,
       lock_file,
@@ -199,7 +291,14 @@ add_to_renv_lock <- function(package, version = NULL, path = ".") {
       auto_unbox = TRUE
     )
 
-    cli::cli_alert_success("Added {.pkg {package}} ({version}) to renv.lock")
+    origin_label <- switch(origin,
+      installed = "installed",
+      cran = "CRAN, not installed",
+      given = "specified"
+    )
+    cli::cli_alert_success(
+      "Added {.pkg {package}} ({pkg_entry$Version}, {origin_label}) to renv.lock"
+    )
 
     TRUE
 

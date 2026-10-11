@@ -193,14 +193,27 @@ add_package_to_renv_lock() {
     local pkg="$1" renv_lock="renv.lock"
     [[ -f "$renv_lock" ]] || { log_error "renv.lock not found"; return 1; }
 
-    local pkg_info; pkg_info=$(fetch_cran_package_info "$pkg")
-    [[ -z "$pkg_info" ]] && { log_error "Failed to fetch $pkg from CRAN"; return 1; }
+    # Prefer the installed version (mirrors add_to_renv_lock() in R): the
+    # lockfile should record what the code was run against. Fall back to the
+    # current CRAN version only when R is absent or the package is not
+    # installed, and say so.
+    local version="" repo="CRAN" installed=""
+    if command -v Rscript >/dev/null 2>&1; then
+        installed=$(Rscript -e "p <- find.package('$pkg', quiet = TRUE); if (length(p)) { d <- read.dcf(file.path(p[1], 'DESCRIPTION'), fields = c('Version', 'Repository')); cat(d[1, 1], if (is.na(d[1, 2])) 'CRAN' else d[1, 2], sep = '\t') }" 2>/dev/null | tail -n 1)
+    fi
+    if [[ -n "$installed" ]]; then
+        version="${installed%%$'\t'*}"
+        repo="${installed#*$'\t'}"
+    else
+        local pkg_info; pkg_info=$(fetch_cran_package_info "$pkg")
+        [[ -z "$pkg_info" ]] && { log_error "$pkg is not installed and could not be fetched from CRAN"; return 1; }
+        version=$(echo "$pkg_info" | jq -r '.Version // empty' 2>/dev/null)
+        [[ -z "$version" ]] && { log_error "Could not get version for $pkg"; return 1; }
+        log_warn "$pkg is not installed; recording the current CRAN version ($version)"
+    fi
 
-    local version; version=$(echo "$pkg_info" | jq -r '.Version // empty' 2>/dev/null)
-    [[ -z "$version" ]] && { log_error "Could not get version for $pkg"; return 1; }
-
-    local entry; entry=$(jq -n --arg p "$pkg" --arg v "$version" \
-        '{Package:$p, Version:$v, Source:"Repository", Repository:"CRAN"}')
+    local entry; entry=$(jq -n --arg p "$pkg" --arg v "$version" --arg r "$repo" \
+        '{Package:$p, Version:$v, Source:"Repository", Repository:$r}')
 
     local tmp; tmp=$(mktemp)
     jq --argjson e "$entry" --arg p "$pkg" '.Packages[$p] = $e' "$renv_lock" > "$tmp" && \

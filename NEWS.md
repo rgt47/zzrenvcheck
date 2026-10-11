@@ -1,3 +1,41 @@
+# zzrenvcheck 0.9.0
+
+## Breaking change
+
+* **`check_packages()` now fails by default when not interactive.**
+  The default is `error_on_fail = !interactive()`. Under `Rscript`, in
+  a Makefile target, or in CI, a failed check signals a
+  `zzrenvcheck_validation_failure` error, so the process exits with a
+  nonzero status; an interactive console session still only reports.
+  Previously the default was `FALSE`, so a non-interactive gate
+  printed the failure and exited 0, and any script or CI step that did
+  not pass `error_on_fail = TRUE` could never fail. CI should still
+  pass `error_on_fail = TRUE` explicitly. Pass `error_on_fail = FALSE`
+  to restore report-only behavior in a script.
+
+* **With `auto_fix = TRUE`, the gate decides on what remains after the
+  fix.** When `error_on_fail` is TRUE, the repaired files are re-checked
+  quietly and the error is raised only if issues survive (for example a
+  version conflict, which auto-fix does not repair, or a package that
+  could not be added). The result gains `status_after_fix`.
+
+## Correctness fixes
+
+* **The auto-fix records the installed version.** A package added to
+  `renv.lock` (without `transitive`) now gets the version installed in
+  the current library, with its `Repository` field, or its GitHub
+  remote fields when it was installed from GitHub. It previously
+  recorded whatever version CRAN served at that moment, which can
+  differ from the version the code was run against. The current CRAN
+  version is used only when the package is not installed, and a
+  message says so. The shell implementation
+  (`modules/validation.sh`) mirrors this when `Rscript` is available.
+
+* **A package added to DESCRIPTION by the auto-fix is locked in the
+  same run.** It was previously added to `renv.lock` only on a second
+  run, because the set of packages missing from the lockfile was
+  computed before DESCRIPTION was fixed.
+
 # zzrenvcheck 0.8.0
 
 ## Correctness fixes

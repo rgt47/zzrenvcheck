@@ -13,7 +13,7 @@ check_packages(
   transitive = FALSE,
   versions = TRUE,
   fresh = FALSE,
-  error_on_fail = FALSE,
+  error_on_fail = !interactive(),
   path = "."
 )
 }
@@ -47,15 +47,23 @@ breaking updates); ordinary \code{auto_fix} keeps pinned versions.
 Routes through \code{\link{sync_packages}}. Default: FALSE.}
 
 \item{error_on_fail}{Logical. If TRUE, raise an error (rather than
-returning) when validation fails, so a non-interactive
-\command{Rscript} run exits with a non-zero status. The signalled
+returning) when validation fails. With \code{auto_fix = TRUE}, the
+files are re-checked after fixing and the error is raised only if
+issues remain. An error makes a non-interactive
+\command{Rscript} run exit with a non-zero status. The signalled
 condition has class \code{zzrenvcheck_validation_failure} and
-carries the result list in its \code{result} field. Default: FALSE.}
+carries the result list in its \code{result} field. Default:
+\code{!interactive()}, so a failed check stops a script, a
+Makefile target, or a CI job, while an interactive console session
+only reports. Pass \code{error_on_fail = TRUE} explicitly in CI so
+the gate does not depend on how R was started.}
 
 \item{path}{Character. Path to project root. Default: current directory.}
 }
 \value{
-Invisibly returns a list with validation results
+Invisibly returns a list with validation results. When
+\code{auto_fix} and \code{error_on_fail} are both TRUE and fixes were
+applied, \code{status_after_fix} gives the status of the re-check.
 }
 \description{
 Validates that all R packages used in code are properly declared in
@@ -70,6 +78,17 @@ inspects an installed library, so it runs without a container or an
 installed environment (for example on the host or in CI, while the container
 holds the real packages).
 }
+\section{Auto-fix and installed versions}{
+
+The check itself never inspects an installed library. When
+\code{auto_fix = TRUE} adds a package to \file{renv.lock} (without
+\code{transitive}), it records the version installed in the current
+library, with its source, so the lockfile matches the environment the
+code was run in. If the package is not installed, it records the current
+CRAN version and says so. Run the auto-fix in the environment whose
+versions should be locked (for example inside the project container).
+}
+
 \examples{
 \dontrun{
 # Basic validation
