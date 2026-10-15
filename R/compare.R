@@ -16,6 +16,15 @@
 #'
 #' @param strict Logical. If TRUE, scans tests/ and vignettes/ directories.
 #'   Default: TRUE.
+#' @param compendium Logical or \code{"auto"}. Controls which packages must
+#'   appear in DESCRIPTION. When \code{TRUE}, only packages used in \file{R/}
+#'   are required in DESCRIPTION; packages used only in \file{analysis/} or
+#'   \file{scripts/} are allowed in \file{renv.lock} without a DESCRIPTION
+#'   entry, because those directories hold analysis-only code, not the
+#'   package API. When \code{FALSE}, every package found in any scanned
+#'   directory must be in DESCRIPTION. When \code{"auto"} (the default), the
+#'   mode is \code{TRUE} when an \file{analysis/} directory exists at
+#'   \code{path} and \code{FALSE} otherwise.
 #' @param auto_fix Logical. If TRUE, automatically adds missing packages.
 #'   Default: FALSE.
 #' @param cleanup Logical. If TRUE, syncs to code (adds missing, removes
@@ -77,6 +86,7 @@
 #'
 #' @export
 check_packages <- function(strict = TRUE,
+                           compendium = "auto",
                            auto_fix = FALSE,
                            cleanup = FALSE,
                            verbose = TRUE,
@@ -113,9 +123,22 @@ check_packages <- function(strict = TRUE,
 
   dirs <- if (strict) STRICT_DIRS else STANDARD_DIRS
 
+  # Resolve the compendium mode: auto-detect by checking for analysis/.
+  is_compendium <- if (identical(compendium, "auto")) {
+    dir.exists(file.path(path, "analysis"))
+  } else {
+    isTRUE(compendium)
+  }
+
   if (strict) {
     cli::cli_alert_info(
       "Running in {.strong strict mode} (scanning all directories)"
+    )
+  }
+  if (is_compendium) {
+    cli::cli_alert_info(
+      paste0("Compendium mode: packages used only in analysis/ or scripts/ ",
+             "need not appear in DESCRIPTION")
     )
   }
 
@@ -126,12 +149,23 @@ check_packages <- function(strict = TRUE,
   raw_packages <- extract_code_packages(dirs = dirs, path = path)
   code_packages <- clean_package_names(raw_packages)
 
+  # In compendium mode the DESCRIPTION requirement applies only to packages
+  # used in R/ (the package API). Packages used only in analysis/ or
+  # scripts/ belong in renv.lock but need not be declared in DESCRIPTION.
+  desc_required_packages <- if (is_compendium) {
+    raw_api <- extract_code_packages(dirs = PACKAGE_API_DIRS, path = path)
+    clean_package_names(raw_api)
+  } else {
+    code_packages
+  }
+
   # A package cannot depend on itself. Reports commonly call
   # library(<own_pkg>) to load the workspace package; drop that
   # self-reference so it is never proposed as a missing dependency.
   own_pkg <- parse_description_package_name(path = path)
   if (length(own_pkg) > 0) {
     code_packages <- setdiff(code_packages, own_pkg)
+    desc_required_packages <- setdiff(desc_required_packages, own_pkg)
   }
 
   desc_imports <- parse_description_imports(path = path)
@@ -160,10 +194,18 @@ check_packages <- function(strict = TRUE,
     )
   }
 
-  missing_in_desc <- setdiff(code_packages, desc_packages)
+  # missing_in_desc: packages that must be in DESCRIPTION but are not.
+  # In compendium mode this is only packages used in R/; in package mode
+  # it is all scanned packages.
+  missing_in_desc <- setdiff(desc_required_packages, desc_packages)
 
+  # missing_in_lock: all packages used anywhere (including analysis/) that
+  # are not pinned in renv.lock.
   missing_in_lock <- if (has_renv_lock(path)) {
-    setdiff(desc_packages, c(renv_packages, BASE_PACKAGES))
+    setdiff(
+      union(code_packages, desc_packages),
+      c(renv_packages, BASE_PACKAGES)
+    )
   } else {
     character(0)
   }
