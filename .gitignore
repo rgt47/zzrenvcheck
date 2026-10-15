@@ -86,3 +86,6 @@ Rplots.pdf
 # Built tarballs and check artifacts
 *.tgz
 *.Rcheck/
+
+# Machine-local Claude Code settings
+**/.claude/settings.local.json
