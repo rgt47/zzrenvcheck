@@ -1,3 +1,20 @@
+# zzrenvcheck 0.10.0
+
+## New feature
+
+* **Research-compendium archetype exemption.**
+  `check_packages()` gains a `compendium` parameter (`"auto"`, `TRUE`,
+  `FALSE`; default `"auto"`). In compendium mode (activated automatically
+  when an `analysis/` directory is present at the project root), only
+  packages used in `R/` are required in DESCRIPTION; packages used only
+  in `analysis/` or `scripts/` need only appear in `renv.lock`. This
+  matches the archetype-conditional rule documented in the book
+  *Reproducible Research for the Health Sciences* (ch. 4). The
+  `renv.lock` completeness check is unchanged in both modes: every
+  package used anywhere (including `analysis/`) must be locked.
+  A new internal constant `PACKAGE_API_DIRS` (`c("R")`) identifies the
+  directories that form the package API.
+
 # zzrenvcheck 0.9.0
 
 ## Breaking change

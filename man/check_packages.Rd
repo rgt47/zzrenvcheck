@@ -6,6 +6,7 @@
 \usage{
 check_packages(
   strict = TRUE,
+  compendium = "auto",
   auto_fix = FALSE,
   cleanup = FALSE,
   verbose = TRUE,
@@ -20,6 +21,16 @@ check_packages(
 \arguments{
 \item{strict}{Logical. If TRUE, scans tests/ and vignettes/ directories.
 Default: TRUE.}
+
+\item{compendium}{Logical or \code{"auto"}. Controls which packages must
+appear in DESCRIPTION. When \code{TRUE}, only packages used in \file{R/}
+are required in DESCRIPTION; packages used only in \file{analysis/} or
+\file{scripts/} are allowed in \file{renv.lock} without a DESCRIPTION
+entry, because those directories hold analysis-only code, not the
+package API. When \code{FALSE}, every package found in any scanned
+directory must be in DESCRIPTION. When \code{"auto"} (the default), the
+mode is \code{TRUE} when an \file{analysis/} directory exists at
+\code{path} and \code{FALSE} otherwise.}
 
 \item{auto_fix}{Logical. If TRUE, automatically adds missing packages.
 Default: FALSE.}

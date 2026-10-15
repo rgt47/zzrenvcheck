@@ -127,3 +127,14 @@ STANDARD_DIRS <- c("R", "scripts", "analysis")
 #'
 #' @keywords internal
 STRICT_DIRS <- c("R", "scripts", "analysis", "tests", "vignettes", "inst")
+
+#' Package-API Directories
+#'
+#' Directories whose packages must be declared in DESCRIPTION. In a
+#' research compendium, \code{analysis/} and \code{scripts/} hold
+#' analysis-only code whose packages need only appear in
+#' \code{renv.lock}, not in DESCRIPTION. Only code under \code{R/}
+#' forms the package API and therefore must be declared.
+#'
+#' @keywords internal
+PACKAGE_API_DIRS <- c("R")
