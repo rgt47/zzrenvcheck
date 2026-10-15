@@ -8,6 +8,7 @@ DESCRIPTION and locked in renv.lock for reproducibility.
 ``` r
 check_packages(
   strict = TRUE,
+  compendium = "auto",
   auto_fix = FALSE,
   cleanup = FALSE,
   verbose = TRUE,
@@ -15,7 +16,7 @@ check_packages(
   transitive = FALSE,
   versions = TRUE,
   fresh = FALSE,
-  error_on_fail = FALSE,
+  error_on_fail = !interactive(),
   path = "."
 )
 ```
@@ -26,6 +27,17 @@ check_packages(
 
   Logical. If TRUE, scans tests/ and vignettes/ directories. Default:
   TRUE.
+
+- compendium:
+
+  Logical or `"auto"`. Controls which packages must appear in
+  DESCRIPTION. When `TRUE`, only packages used in `R/` are required in
+  DESCRIPTION; packages used only in `analysis/` or `scripts/` are
+  allowed in `renv.lock` without a DESCRIPTION entry, because those
+  directories hold analysis-only code, not the package API. When
+  `FALSE`, every package found in any scanned directory must be in
+  DESCRIPTION. When `"auto"` (the default), the mode is `TRUE` when an
+  `analysis/` directory exists at `path` and `FALSE` otherwise.
 
 - auto_fix:
 
@@ -70,10 +82,15 @@ check_packages(
 - error_on_fail:
 
   Logical. If TRUE, raise an error (rather than returning) when
-  validation fails, so a non-interactive `Rscript` run exits with a
-  non-zero status. The signalled condition has class
-  `zzrenvcheck_validation_failure` and carries the result list in its
-  `result` field. Default: FALSE.
+  validation fails. With `auto_fix = TRUE`, the files are re-checked
+  after fixing and the error is raised only if issues remain. An error
+  makes a non-interactive `Rscript` run exit with a non-zero status. The
+  signalled condition has class `zzrenvcheck_validation_failure` and
+  carries the result list in its `result` field. Default:
+  `!interactive()`, so a failed check stops a script, a Makefile target,
+  or a CI job, while an interactive console session only reports. Pass
+  `error_on_fail = TRUE` explicitly in CI so the gate does not depend on
+  how R was started.
 
 - path:
 
@@ -81,7 +98,9 @@ check_packages(
 
 ## Value
 
-Invisibly returns a list with validation results
+Invisibly returns a list with validation results. When `auto_fix` and
+`error_on_fail` are both TRUE and fixes were applied, `status_after_fix`
+gives the status of the re-check.
 
 ## Details
 
@@ -92,6 +111,16 @@ source files and the two manifests and never inspects an installed
 library, so it runs without a container or an installed environment (for
 example on the host or in CI, while the container holds the real
 packages).
+
+## Auto-fix and installed versions
+
+The check itself never inspects an installed library. When
+`auto_fix = TRUE` adds a package to `renv.lock` (without `transitive`),
+it records the version installed in the current library, with its
+source, so the lockfile matches the environment the code was run in. If
+the package is not installed, it records the current CRAN version and
+says so. Run the auto-fix in the environment whose versions should be
+locked (for example inside the project container).
 
 ## Examples
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,27 @@
       <small>Source: <a href="https://github.com/rgt47/zzrenvcheck/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.10.0" id="zzrenvcheck-0100">zzrenvcheck 0.10.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-0100"></a></h2>
+<div class="section level3">
+<h3 id="new-feature-0-10-0">New feature<a class="anchor" aria-label="anchor" href="#new-feature-0-10-0"></a></h3>
+<ul><li>
+<strong>Research-compendium archetype exemption.</strong> <code><a href="../reference/check_packages.html">check_packages()</a></code> gains a <code>compendium</code> parameter (<code>"auto"</code>, <code>TRUE</code>, <code>FALSE</code>; default <code>"auto"</code>). In compendium mode (activated automatically when an <code>analysis/</code> directory is present at the project root), only packages used in <code>R/</code> are required in DESCRIPTION; packages used only in <code>analysis/</code> or <code>scripts/</code> need only appear in <code>renv.lock</code>. This matches the archetype-conditional rule documented in the book <em>Reproducible Research for the Health Sciences</em> (ch. 4). The <code>renv.lock</code> completeness check is unchanged in both modes: every package used anywhere (including <code>analysis/</code>) must be locked. A new internal constant <code>PACKAGE_API_DIRS</code> (<code>c("R")</code>) identifies the directories that form the package API.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.9.0" id="zzrenvcheck-090">zzrenvcheck 0.9.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-090"></a></h2>
+<div class="section level3">
+<h3 id="breaking-change-0-9-0">Breaking change<a class="anchor" aria-label="anchor" href="#breaking-change-0-9-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/check_packages.html">check_packages()</a></code> now fails by default when not interactive.</strong> The default is <code>error_on_fail = !interactive()</code>. Under <code>Rscript</code>, in a Makefile target, or in CI, a failed check signals a <code>zzrenvcheck_validation_failure</code> error, so the process exits with a nonzero status; an interactive console session still only reports. Previously the default was <code>FALSE</code>, so a non-interactive gate printed the failure and exited 0, and any script or CI step that did not pass <code>error_on_fail = TRUE</code> could never fail. CI should still pass <code>error_on_fail = TRUE</code> explicitly. Pass <code>error_on_fail = FALSE</code> to restore report-only behavior in a script.</p></li>
+<li><p><strong>With <code>auto_fix = TRUE</code>, the gate decides on what remains after the fix.</strong> When <code>error_on_fail</code> is TRUE, the repaired files are re-checked quietly and the error is raised only if issues survive (for example a version conflict, which auto-fix does not repair, or a package that could not be added). The result gains <code>status_after_fix</code>.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="correctness-fixes-0-9-0">Correctness fixes<a class="anchor" aria-label="anchor" href="#correctness-fixes-0-9-0"></a></h3>
+<ul><li><p><strong>The auto-fix records the installed version.</strong> A package added to <code>renv.lock</code> (without <code>transitive</code>) now gets the version installed in the current library, with its <code>Repository</code> field, or its GitHub remote fields when it was installed from GitHub. It previously recorded whatever version CRAN served at that moment, which can differ from the version the code was run against. The current CRAN version is used only when the package is not installed, and a message says so. The shell implementation (<code>modules/validation.sh</code>) mirrors this when <code>Rscript</code> is available.</p></li>
+<li><p><strong>A package added to DESCRIPTION by the auto-fix is locked in the same run.</strong> It was previously added to <code>renv.lock</code> only on a second run, because the set of packages missing from the lockfile was computed before DESCRIPTION was fixed.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.0" id="zzrenvcheck-080">zzrenvcheck 0.8.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-080"></a></h2>
 <div class="section level3">

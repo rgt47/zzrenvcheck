@@ -9,7 +9,7 @@ DESCRIPTION and locked in renv.lock for reproducibility."><meta property="og:ima
 
     <a class="navbar-brand me-2" href="../index.html">zzrenvcheck</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,6 +48,7 @@ DESCRIPTION and locked in renv.lock for reproducibility.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">check_packages</span><span class="op">(</span></span>
 <span>  strict <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  compendium <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  auto_fix <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -55,7 +56,7 @@ DESCRIPTION and locked in renv.lock for reproducibility.</p>
 <span>  transitive <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  versions <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  fresh <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  error_on_fail <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  error_on_fail <span class="op">=</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  path <span class="op">=</span> <span class="st">"."</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -67,6 +68,18 @@ DESCRIPTION and locked in renv.lock for reproducibility.</p>
 <dl><dt id="arg-strict">strict<a class="anchor" aria-label="anchor" href="#arg-strict"></a></dt>
 <dd><p>Logical. If TRUE, scans tests/ and vignettes/ directories.
 Default: TRUE.</p></dd>
+
+
+<dt id="arg-compendium">compendium<a class="anchor" aria-label="anchor" href="#arg-compendium"></a></dt>
+<dd><p>Logical or <code>"auto"</code>. Controls which packages must
+appear in DESCRIPTION. When <code>TRUE</code>, only packages used in <code class="file">R/</code>
+are required in DESCRIPTION; packages used only in <code class="file">analysis/</code> or
+<code class="file">scripts/</code> are allowed in <code class="file">renv.lock</code> without a DESCRIPTION
+entry, because those directories hold analysis-only code, not the
+package API. When <code>FALSE</code>, every package found in any scanned
+directory must be in DESCRIPTION. When <code>"auto"</code> (the default), the
+mode is <code>TRUE</code> when an <code class="file">analysis/</code> directory exists at
+<code>path</code> and <code>FALSE</code> otherwise.</p></dd>
 
 
 <dt id="arg-auto-fix">auto_fix<a class="anchor" aria-label="anchor" href="#arg-auto-fix"></a></dt>
@@ -110,10 +123,16 @@ Routes through <code><a href="sync_packages.html">sync_packages</a></code>. Defa
 
 <dt id="arg-error-on-fail">error_on_fail<a class="anchor" aria-label="anchor" href="#arg-error-on-fail"></a></dt>
 <dd><p>Logical. If TRUE, raise an error (rather than
-returning) when validation fails, so a non-interactive
-<code class="command">Rscript</code> run exits with a non-zero status. The signalled
+returning) when validation fails. With <code>auto_fix = TRUE</code>, the
+files are re-checked after fixing and the error is raised only if
+issues remain. An error makes a non-interactive
+<code class="command">Rscript</code> run exit with a non-zero status. The signalled
 condition has class <code>zzrenvcheck_validation_failure</code> and
-carries the result list in its <code>result</code> field. Default: FALSE.</p></dd>
+carries the result list in its <code>result</code> field. Default:
+<code>!interactive()</code>, so a failed check stops a script, a
+Makefile target, or a CI job, while an interactive console session
+only reports. Pass <code>error_on_fail = TRUE</code> explicitly in CI so
+the gate does not depend on how R was started.</p></dd>
 
 
 <dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>
@@ -122,7 +141,9 @@ carries the result list in its <code>result</code> field. Default: FALSE.</p></d
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Invisibly returns a list with validation results</p>
+    <p>Invisibly returns a list with validation results. When
+<code>auto_fix</code> and <code>error_on_fail</code> are both TRUE and fixes were
+applied, <code>status_after_fix</code> gives the status of the re-check.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -133,6 +154,18 @@ declaration-only: it reads source files and the two manifests and never
 inspects an installed library, so it runs without a container or an
 installed environment (for example on the host or in CI, while the container
 holds the real packages).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="auto-fix-and-installed-versions">Auto-fix and installed versions<a class="anchor" aria-label="anchor" href="#auto-fix-and-installed-versions"></a></h2>
+
+
+<p>The check itself never inspects an installed library. When
+<code>auto_fix = TRUE</code> adds a package to <code class="file">renv.lock</code> (without
+<code>transitive</code>), it records the version installed in the current
+library, with its source, so the lockfile matches the environment the
+code was run in. If the package is not installed, it records the current
+CRAN version and says so. Run the auto-fix in the environment whose
+versions should be locked (for example inside the project container).</p>
     </div>
 
     <div class="section level2">
