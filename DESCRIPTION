@@ -1,6 +1,6 @@
 Package: zzrenvcheck
 Title: Validate R Package Dependencies for Reproducibility
-Version: 0.8.0
+Version: 0.9.0
 Authors@R:
     person("Ronald G.", "Thomas", , "rgthomas@ucsd.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-1686-4965"))
@@ -10,9 +10,10 @@ Description: Validates that all R packages used in source code are properly
     dependency validation, and auto-fix capabilities through the CRAN API.
     Complements 'renv' rather than replacing it: 'renv' confirms the lockfile
     matches the installed library, while this package confirms that code,
-    DESCRIPTION, and the lockfile agree. It is declaration-only, reading source
-    files and manifests rather than an installed library, so it runs without a
-    container or an installed environment.
+    DESCRIPTION, and the lockfile agree. The check is declaration-only, reading
+    source files and manifests rather than an installed library, so it runs
+    without a container or an installed environment; the optional auto-fix
+    records the installed version of a package it adds to the lockfile.
 License: GPL (>= 3)
 Encoding: UTF-8
 Language: en-US

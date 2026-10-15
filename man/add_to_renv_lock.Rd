@@ -4,19 +4,28 @@
 \alias{add_to_renv_lock}
 \title{Add Package to renv.lock}
 \usage{
-add_to_renv_lock(package, version = NULL, path = ".")
+add_to_renv_lock(package, version = NULL, path = ".", lib.loc = NULL)
 }
 \arguments{
 \item{package}{Character. Package name.}
 
-\item{version}{Character. Package version. If NULL, fetches from CRAN.}
+\item{version}{Character. Package version. If NULL, the installed
+version is used, falling back to the current CRAN version when the
+package is not installed.}
 
 \item{path}{Character. Path to project root.}
+
+\item{lib.loc}{Character vector of library paths searched for the
+installed package, or NULL for \code{.libPaths()}.}
 }
 \value{
 Logical indicating success
 }
 \description{
-Adds a package entry to renv.lock by querying CRAN API.
+Adds a package entry to renv.lock. When \code{version} is NULL, the entry
+records the version installed in the current library (see
+\code{installed_lock_entry()}), so the lockfile matches the environment
+the code was run in. Only when the package is not installed does it fall
+back to the current CRAN version, and it says so.
 }
 \keyword{internal}

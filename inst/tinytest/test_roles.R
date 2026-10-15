@@ -40,7 +40,7 @@ local({
              file.path(d, "DESCRIPTION"))
   writeLines("dplyr::filter(x)", file.path(d, "R", "f.R"))
   res <- check_packages(auto_fix = FALSE, strict = FALSE, versions = FALSE,
-                        path = d, verbose = FALSE)
+                        path = d, verbose = FALSE, error_on_fail = FALSE)
   expect_false("Rcpp" %in% res$unused_in_description,
                info = "LinkingTo Rcpp not flagged unused")
   unlink(d, recursive = TRUE)

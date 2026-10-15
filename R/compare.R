@@ -35,13 +35,30 @@
 #'   breaking updates); ordinary \code{auto_fix} keeps pinned versions.
 #'   Routes through \code{\link{sync_packages}}. Default: FALSE.
 #' @param error_on_fail Logical. If TRUE, raise an error (rather than
-#'   returning) when validation fails, so a non-interactive
-#'   \command{Rscript} run exits with a non-zero status. The signalled
+#'   returning) when validation fails. With \code{auto_fix = TRUE}, the
+#'   files are re-checked after fixing and the error is raised only if
+#'   issues remain. An error makes a non-interactive
+#'   \command{Rscript} run exit with a non-zero status. The signalled
 #'   condition has class \code{zzrenvcheck_validation_failure} and
-#'   carries the result list in its \code{result} field. Default: FALSE.
+#'   carries the result list in its \code{result} field. Default:
+#'   \code{!interactive()}, so a failed check stops a script, a
+#'   Makefile target, or a CI job, while an interactive console session
+#'   only reports. Pass \code{error_on_fail = TRUE} explicitly in CI so
+#'   the gate does not depend on how R was started.
 #' @param path Character. Path to project root. Default: current directory.
 #'
-#' @return Invisibly returns a list with validation results
+#' @return Invisibly returns a list with validation results. When
+#'   \code{auto_fix} and \code{error_on_fail} are both TRUE and fixes were
+#'   applied, \code{status_after_fix} gives the status of the re-check.
+#'
+#' @section Auto-fix and installed versions:
+#' The check itself never inspects an installed library. When
+#' \code{auto_fix = TRUE} adds a package to \file{renv.lock} (without
+#' \code{transitive}), it records the version installed in the current
+#' library, with its source, so the lockfile matches the environment the
+#' code was run in. If the package is not installed, it records the current
+#' CRAN version and says so. Run the auto-fix in the environment whose
+#' versions should be locked (for example inside the project container).
 #'
 #' @examples
 #' \dontrun{
@@ -67,7 +84,7 @@ check_packages <- function(strict = TRUE,
                            transitive = FALSE,
                            versions = TRUE,
                            fresh = FALSE,
-                           error_on_fail = FALSE,
+                           error_on_fail = !interactive(),
                            path = ".") {
 
   if (cleanup) {
@@ -211,7 +228,15 @@ check_packages <- function(strict = TRUE,
     }
 
     if (auto_fix) {
-      handle_auto_fix_description(missing_in_desc, path)
+      failed_desc <- handle_auto_fix_description(missing_in_desc, path)
+      # Packages just added to DESCRIPTION are not yet in renv.lock; lock
+      # them in the same run rather than leaving that to a second pass.
+      if (has_renv_lock(path)) {
+        missing_in_lock <- union(
+          missing_in_lock,
+          setdiff(missing_in_desc, c(failed_desc, renv_packages, BASE_PACKAGES))
+        )
+      }
     } else {
       show_manual_fix_instructions(missing_in_desc)
     }
@@ -292,6 +317,25 @@ check_packages <- function(strict = TRUE,
     if (has_renv_lock(path)) {
       cli::cli_alert_success("All DESCRIPTION imports are locked in renv.lock")
     }
+  }
+
+  # After an auto-fix, the result above still describes the state found
+  # before fixing. Gate on what remains: re-check the repaired files
+  # quietly, and fail only if problems survive the fix.
+  if (error_on_fail && auto_fix && identical(result$status, "fail")) {
+    after_fix <- suppressMessages(check_packages(
+      strict = strict, auto_fix = FALSE, verbose = FALSE,
+      validate_sources = FALSE, versions = versions,
+      error_on_fail = FALSE, path = path
+    ))
+    result$status_after_fix <- after_fix$status
+    if (identical(after_fix$status, "pass")) {
+      cli::cli_alert_success(
+        "Auto-fix resolved all issues; review and commit the changes."
+      )
+      return(invisible(result))
+    }
+    cli::cli_alert_danger("Issues remain after auto-fix.")
   }
 
   if (error_on_fail && identical(result$status, "fail")) {
