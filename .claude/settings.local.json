@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(shellcheck modules/validation.sh)",
+      "Bash(shellcheck -S warning modules/validation.sh)",
+      "Bash(sed 's/^/shellcheck warnings: /')",
+      "Bash(bash modules/validation.sh --help)"
+    ]
+  }
+}
