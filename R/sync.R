@@ -18,6 +18,12 @@
 #'   renv.lock entry is overwritten at the current repository version rather
 #'   than only adding missing packages. Implies \code{transitive = TRUE}. A
 #'   deliberate version refresh. Default: FALSE.
+#' @param skip_image_pkgs Logical. If TRUE, packages already installed in the
+#'   Docker image site-library are excluded from both DESCRIPTION and
+#'   renv.lock. These packages are pinned by the image digest, not renv.
+#'   Default: FALSE.
+#' @param image Character. Docker image name to query when
+#'   \code{skip_image_pkgs = TRUE}. Defaults to \code{basename(path)}.
 #'
 #' @return Invisibly returns a list with changes made
 #'
@@ -48,7 +54,9 @@ sync_packages <- function(strict = TRUE,
                           verbose = FALSE,
                           dry_run = FALSE,
                           transitive = FALSE,
-                          fresh = FALSE) {
+                          fresh = FALSE,
+                          skip_image_pkgs = FALSE,
+                          image = NULL) {
 
   # fresh rebuilds renv.lock from code: re-resolve and overwrite every entry at
   # current repo versions rather than preserving existing pins. It needs the
@@ -97,19 +105,38 @@ sync_packages <- function(strict = TRUE,
     character(0)
   }
 
+  # Packages baked into the image are pinned by the FROM digest, not renv.
+  # Exclude them from DESCRIPTION and renv.lock when skip_image_pkgs = TRUE.
+  image_packages <- if (skip_image_pkgs) {
+    img <- if (is.null(image)) basename(normalizePath(path)) else image
+    get_image_packages(image = img)
+  } else {
+    character(0)
+  }
+
+  # Effective code packages: exclude image packages so they never enter
+  # DESCRIPTION or drive renv.lock entries.
+  code_packages_eff <- setdiff(code_packages, image_packages)
+
   cli::cli_alert_info("Found {length(code_packages)} package{?s} in code")
+  if (length(image_packages) > 0) {
+    cli::cli_alert_info(
+      "Skipping {length(intersect(code_packages, image_packages))} image package{?s} (pinned by FROM)"
+    )
+  }
 
   if (verbose) {
     cli::cli_text("Code packages:")
-    cli::cli_ul(code_packages)
+    cli::cli_ul(code_packages_eff)
   }
 
-  to_add_desc <- setdiff(code_packages, desc_packages)
-  to_remove_desc <- setdiff(desc_packages, c(code_packages, structural, "renv"))
+  to_add_desc <- setdiff(code_packages_eff, desc_packages)
+  # Also removes image packages already present in DESCRIPTION.
+  to_remove_desc <- setdiff(desc_packages, c(code_packages_eff, structural, "renv"))
 
-  if (transitive && has_renv_lock(path) && length(code_packages) > 0) {
+  if (transitive && has_renv_lock(path) && length(code_packages_eff) > 0) {
     db <- available.packages()
-    resolved <- resolve_transitive_deps(code_packages, db = db)
+    resolved <- resolve_transitive_deps(code_packages_eff, db = db)
     resolved_names <- names(resolved)
     # fresh: re-add the whole closure so every entry is overwritten at the
     # current repo version. Otherwise add only what is missing, preserving pins.
@@ -117,8 +144,8 @@ sync_packages <- function(strict = TRUE,
     to_remove_lock <- setdiff(renv_packages, c(resolved_names, structural, "renv"))
   } else {
     db <- NULL
-    to_add_lock <- if (fresh) code_packages else setdiff(code_packages, renv_packages)
-    to_remove_lock <- setdiff(renv_packages, c(code_packages, structural, "renv"))
+    to_add_lock <- if (fresh) code_packages_eff else setdiff(code_packages_eff, renv_packages)
+    to_remove_lock <- setdiff(renv_packages, c(code_packages_eff, structural, "renv"))
   }
 
   changes <- list(

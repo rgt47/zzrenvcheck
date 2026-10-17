@@ -121,7 +121,8 @@ check_packages <- function(strict = TRUE,
   # pinned versions.
   if (fresh) {
     return(sync_packages(strict = strict, path = path, verbose = verbose,
-                         transitive = TRUE, fresh = TRUE))
+                         transitive = TRUE, fresh = TRUE,
+                         skip_image_pkgs = skip_image_pkgs, image = image))
   }
 
   cli::cli_h1("Package Dependency Validation")
@@ -206,27 +207,31 @@ check_packages <- function(strict = TRUE,
     )
   }
 
-  # missing_in_desc: packages that must be in DESCRIPTION but are not.
-  # In compendium mode this is only packages used in R/; in package mode
-  # it is all scanned packages.
-  missing_in_desc <- setdiff(desc_required_packages, desc_packages)
-
-  # Packages baked into the Docker image (site-library + base library) need not
-  # be in renv.lock: they are available at runtime via external.libraries and
-  # are pinned by the image digest in the FROM line, not by renv.lock.
-  image_packages <- if (skip_image_pkgs && has_renv_lock(path)) {
+  # Packages baked into the Docker image (site-library + base library) are
+  # pinned by the image digest in the FROM line, not by renv.lock. Exclude
+  # them from both DESCRIPTION and renv.lock when skip_image_pkgs = TRUE.
+  image_packages <- if (skip_image_pkgs) {
     img <- if (is.null(image)) basename(normalizePath(path)) else image
     get_image_packages(image = img)
   } else {
     character(0)
   }
 
+  # missing_in_desc: packages that must be in DESCRIPTION but are not.
+  # In compendium mode this is only packages used in R/; in package mode
+  # it is all scanned packages. Image packages are excluded: they are
+  # guaranteed by the FROM line and must not be declared in DESCRIPTION.
+  missing_in_desc <- setdiff(
+    setdiff(desc_required_packages, image_packages),
+    desc_packages
+  )
+
   # missing_in_lock: all packages used anywhere (including analysis/) that
   # are not pinned in renv.lock.
   missing_in_lock <- if (has_renv_lock(path)) {
     setdiff(
-      union(code_packages, desc_packages),
-      c(renv_packages, BASE_PACKAGES, image_packages)
+      setdiff(union(code_packages, desc_packages), image_packages),
+      c(renv_packages, BASE_PACKAGES)
     )
   } else {
     character(0)
@@ -298,7 +303,8 @@ check_packages <- function(strict = TRUE,
       if (has_renv_lock(path)) {
         missing_in_lock <- union(
           missing_in_lock,
-          setdiff(missing_in_desc, c(failed_desc, renv_packages, BASE_PACKAGES))
+          setdiff(missing_in_desc,
+                  c(failed_desc, renv_packages, BASE_PACKAGES, image_packages))
         )
       }
     } else {
