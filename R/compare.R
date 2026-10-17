@@ -54,6 +54,16 @@
 #'   Makefile target, or a CI job, while an interactive console session
 #'   only reports. Pass \code{error_on_fail = TRUE} explicitly in CI so
 #'   the gate does not depend on how R was started.
+#' @param skip_image_pkgs Logical. If TRUE, packages already installed in the
+#'   Docker image (site-library and base library, outside the renv project
+#'   library) are excluded from \code{missing_in_lock}. These packages are
+#'   available at runtime via \code{external.libraries} and are pinned by the
+#'   image digest in the Dockerfile \code{FROM} line, so recording them in
+#'   \code{renv.lock} is redundant. Requires Docker to be available and the
+#'   image to be built. Default: FALSE.
+#' @param image Character. Docker image name to query when
+#'   \code{skip_image_pkgs = TRUE}. Defaults to \code{basename(path)}, which
+#'   matches the zzcollab \code{PACKAGE_NAME} Makefile convention.
 #' @param path Character. Path to project root. Default: current directory.
 #'
 #' @return Invisibly returns a list with validation results. When
@@ -95,6 +105,8 @@ check_packages <- function(strict = TRUE,
                            versions = TRUE,
                            fresh = FALSE,
                            error_on_fail = !interactive(),
+                           skip_image_pkgs = FALSE,
+                           image = NULL,
                            path = ".") {
 
   if (cleanup) {
@@ -199,12 +211,22 @@ check_packages <- function(strict = TRUE,
   # it is all scanned packages.
   missing_in_desc <- setdiff(desc_required_packages, desc_packages)
 
+  # Packages baked into the Docker image (site-library + base library) need not
+  # be in renv.lock: they are available at runtime via external.libraries and
+  # are pinned by the image digest in the FROM line, not by renv.lock.
+  image_packages <- if (skip_image_pkgs && has_renv_lock(path)) {
+    img <- if (is.null(image)) basename(normalizePath(path)) else image
+    get_image_packages(image = img)
+  } else {
+    character(0)
+  }
+
   # missing_in_lock: all packages used anywhere (including analysis/) that
   # are not pinned in renv.lock.
   missing_in_lock <- if (has_renv_lock(path)) {
     setdiff(
       union(code_packages, desc_packages),
-      c(renv_packages, BASE_PACKAGES)
+      c(renv_packages, BASE_PACKAGES, image_packages)
     )
   } else {
     character(0)

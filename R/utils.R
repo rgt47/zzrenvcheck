@@ -171,3 +171,67 @@ clean_description <- function(strict = TRUE, path = ".") {
 
   invisible(unused)
 }
+
+#' Query Packages Installed in a Docker Image
+#'
+#' Runs a one-shot container from the named image and returns the names of all
+#' R packages found in the site and base libraries (i.e. everything baked in
+#' at build time outside of the renv project library). Used by
+#' \code{\link{check_packages}} when \code{skip_image_pkgs = TRUE} to avoid
+#' adding image-resident packages to \code{renv.lock}.
+#'
+#' @param image Character. Docker image name or tag. Defaults to
+#'   \code{basename(getwd())}, which matches the zzcollab \code{PACKAGE_NAME}
+#'   Makefile variable.
+#' @param runtime Character. Container runtime binary. Default: \code{"docker"}.
+#' @param lib_paths Character vector. Library paths to query inside the
+#'   container. Default covers the rocker site-library and base library.
+#'
+#' @return Character vector of package names, or \code{character(0)} if the
+#'   image is not found or the query fails.
+#'
+#' @keywords internal
+get_image_packages <- function(
+  image = basename(getwd()),
+  runtime = "docker",
+  lib_paths = c("/usr/local/lib/R/site-library", "/usr/local/lib/R/library")
+) {
+  if (!nzchar(Sys.which(runtime))) {
+    cli::cli_alert_warning(
+      "skip_image_pkgs = TRUE but {.code {runtime}} not found; skipping."
+    )
+    return(character(0))
+  }
+
+  lib_arg <- paste0(
+    "c(", paste0('"', lib_paths, '"', collapse = ", "), ")"
+  )
+  r_expr <- paste0(
+    "cat(rownames(installed.packages(lib.loc = ", lib_arg, ")), sep = '\n')"
+  )
+
+  result <- tryCatch(
+    system2(
+      runtime,
+      args = c("run", "--rm", image, "Rscript", "-e", shQuote(r_expr)),
+      stdout = TRUE, stderr = FALSE
+    ),
+    error = function(e) NULL
+  )
+
+  if (is.null(result) || !is.character(result)) {
+    cli::cli_alert_warning(
+      paste0(
+        "Could not query image {.val {image}}; ",
+        "is the image built? Skipping image-package filter."
+      )
+    )
+    return(character(0))
+  }
+
+  pkgs <- trimws(result[nzchar(trimws(result))])
+  cli::cli_alert_info(
+    "Image {.val {image}}: {length(pkgs)} package{?s} available outside renv."
+  )
+  pkgs
+}
