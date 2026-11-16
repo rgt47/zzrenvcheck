@@ -6,7 +6,8 @@ to support reproducible research environments.
 
 ## Test environments
 
-* Local: macOS 15 (aarch64-apple-darwin25.4.0), R 4.6.0
+* Local: macOS Tahoe 26.6.2 (aarch64-apple-darwin23), R 4.6.0,
+  `R CMD check --as-cran --no-manual` on 2026-11-16
 
 Before submission this should also be checked on:
 
@@ -21,7 +22,7 @@ The note is:
 
 ```
 * checking CRAN incoming feasibility ... NOTE
-  Maintainer: 'Ronald (Ryy) G Thomas <rgthomas@ucsd.edu>'
+  Maintainer: 'Ronald G. Thomas <rgthomas@ucsd.edu>'
   New submission
 ```
 
@@ -33,13 +34,14 @@ reflects an outdated HTML Tidy binary on the checking machine (for example
 the version Apple bundles with macOS), not the package, and does not occur
 on the CRAN check machines.
 
-Note to maintainer (2026-08-16): a prior local run of this package
-surfaced 3 NOTEs, not 1, because `.zzcollab-state`, `dev-docs`,
-`tooling.lock`, and `zzcollab.yaml` (workspace scaffolding files) were
-not excluded from the build and were packed into the tarball. These
-have been added to `.Rbuildignore`; re-run `R CMD check --as-cran`
-before the next submission to confirm the tarball is back down to the
-single expected 'New submission' note.
+Note to maintainer (2026-11-16): the committed 0.10.0 tree failed this
+check with 1 WARNING (codoc mismatch: `skip_image_pkgs` and `image`
+undocumented in `check_packages.Rd` and `sync_packages.Rd`) because
+`man/` had not been regenerated. After `devtools::document()`, the
+local run above gives 0 errors, 0 warnings, and the single 'New
+submission' note. The manual (PDF) was not checked locally
+(`--no-manual`); re-run without that flag, and on win-builder and
+R-hub, before submission.
 
 ## Reverse dependencies
 

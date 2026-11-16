@@ -1,3 +1,21 @@
+# zzrenvcheck (development version)
+
+## Bug fixes
+
+* **The post-fix re-check now uses the caller's settings.** With
+  `auto_fix = TRUE` and `error_on_fail = TRUE`, `check_packages()`
+  re-checks the repaired files before deciding whether to fail. That
+  re-check dropped `compendium`, `skip_image_pkgs`, and `image`, so it
+  ran with `compendium = "auto"` and no image-package exemption. A fix
+  that succeeded under the caller's rules could then fail the gate, for
+  example by requiring a `scripts/`-only package in DESCRIPTION under an
+  explicit `compendium = TRUE`, or by flagging packages that
+  `skip_image_pkgs = TRUE` had exempted. The re-check now forwards all
+  three arguments.
+* **Documentation regenerated.** `man/check_packages.Rd` and
+  `man/sync_packages.Rd` now document `skip_image_pkgs` and `image`,
+  which removes the `R CMD check` codoc WARNING.
+
 # zzrenvcheck 0.10.0
 
 ## New feature
