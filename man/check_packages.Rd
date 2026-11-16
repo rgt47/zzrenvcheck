@@ -15,6 +15,8 @@ check_packages(
   versions = TRUE,
   fresh = FALSE,
   error_on_fail = !interactive(),
+  skip_image_pkgs = FALSE,
+  image = NULL,
   path = "."
 )
 }
@@ -59,8 +61,9 @@ Routes through \code{\link{sync_packages}}. Default: FALSE.}
 
 \item{error_on_fail}{Logical. If TRUE, raise an error (rather than
 returning) when validation fails. With \code{auto_fix = TRUE}, the
-files are re-checked after fixing and the error is raised only if
-issues remain. An error makes a non-interactive
+files are re-checked after fixing, with the same \code{strict},
+\code{compendium}, \code{versions}, \code{skip_image_pkgs}, and
+\code{image} settings, and the error is raised only if issues remain. An error makes a non-interactive
 \command{Rscript} run exit with a non-zero status. The signalled
 condition has class \code{zzrenvcheck_validation_failure} and
 carries the result list in its \code{result} field. Default:
@@ -68,6 +71,20 @@ carries the result list in its \code{result} field. Default:
 Makefile target, or a CI job, while an interactive console session
 only reports. Pass \code{error_on_fail = TRUE} explicitly in CI so
 the gate does not depend on how R was started.}
+
+\item{skip_image_pkgs}{Logical. If TRUE, packages already installed in the
+Docker image (site-library and base library, outside the renv project
+library) are excluded from both \code{missing_in_description} and
+\code{missing_in_lock}, and so are never added by \code{auto_fix}. The
+post-fix re-check applies the same exclusion. These packages are
+available at runtime via \code{external.libraries} and are pinned by the
+image digest in the Dockerfile \code{FROM} line, so recording them in
+\code{renv.lock} is redundant. Requires Docker to be available and the
+image to be built. Default: FALSE.}
+
+\item{image}{Character. Docker image name to query when
+\code{skip_image_pkgs = TRUE}. Defaults to \code{basename(path)}, which
+matches the zzcollab \code{PACKAGE_NAME} Makefile convention.}
 
 \item{path}{Character. Path to project root. Default: current directory.}
 }

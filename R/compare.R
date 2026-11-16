@@ -45,8 +45,9 @@
 #'   Routes through \code{\link{sync_packages}}. Default: FALSE.
 #' @param error_on_fail Logical. If TRUE, raise an error (rather than
 #'   returning) when validation fails. With \code{auto_fix = TRUE}, the
-#'   files are re-checked after fixing and the error is raised only if
-#'   issues remain. An error makes a non-interactive
+#'   files are re-checked after fixing, with the same \code{strict},
+#'   \code{compendium}, \code{versions}, \code{skip_image_pkgs}, and
+#'   \code{image} settings, and the error is raised only if issues remain. An error makes a non-interactive
 #'   \command{Rscript} run exit with a non-zero status. The signalled
 #'   condition has class \code{zzrenvcheck_validation_failure} and
 #'   carries the result list in its \code{result} field. Default:
@@ -56,7 +57,9 @@
 #'   the gate does not depend on how R was started.
 #' @param skip_image_pkgs Logical. If TRUE, packages already installed in the
 #'   Docker image (site-library and base library, outside the renv project
-#'   library) are excluded from \code{missing_in_lock}. These packages are
+#'   library) are excluded from both \code{missing_in_description} and
+#'   \code{missing_in_lock}, and so are never added by \code{auto_fix}. The
+#'   post-fix re-check applies the same exclusion. These packages are
 #'   available at runtime via \code{external.libraries} and are pinned by the
 #'   image digest in the Dockerfile \code{FROM} line, so recording them in
 #'   \code{renv.lock} is redundant. Requires Docker to be available and the
@@ -391,12 +394,15 @@ check_packages <- function(strict = TRUE,
 
   # After an auto-fix, the result above still describes the state found
   # before fixing. Gate on what remains: re-check the repaired files
-  # quietly, and fail only if problems survive the fix.
+  # quietly, and fail only if problems survive the fix. The re-check must
+  # apply the caller's rules (compendium mode, image-package exemption), or
+  # it can fail packages the original check deliberately exempted.
   if (error_on_fail && auto_fix && identical(result$status, "fail")) {
     after_fix <- suppressMessages(check_packages(
-      strict = strict, auto_fix = FALSE, verbose = FALSE,
-      validate_sources = FALSE, versions = versions,
-      error_on_fail = FALSE, path = path
+      strict = strict, compendium = compendium, auto_fix = FALSE,
+      verbose = FALSE, validate_sources = FALSE, versions = versions,
+      error_on_fail = FALSE, skip_image_pkgs = skip_image_pkgs,
+      image = image, path = path
     ))
     result$status_after_fix <- after_fix$status
     if (identical(after_fix$status, "pass")) {

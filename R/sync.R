@@ -19,9 +19,12 @@
 #'   than only adding missing packages. Implies \code{transitive = TRUE}. A
 #'   deliberate version refresh. Default: FALSE.
 #' @param skip_image_pkgs Logical. If TRUE, packages already installed in the
-#'   Docker image site-library are excluded from both DESCRIPTION and
-#'   renv.lock. These packages are pinned by the image digest, not renv.
-#'   Default: FALSE.
+#'   Docker image (site-library and base library) are excluded from both
+#'   DESCRIPTION and renv.lock as code packages, and any already listed in
+#'   DESCRIPTION are removed.
+#'   These packages are pinned by the image digest, not renv. Requires Docker
+#'   and a built image; if either is unavailable, a warning is shown and no
+#'   packages are excluded. Default: FALSE.
 #' @param image Character. Docker image name to query when
 #'   \code{skip_image_pkgs = TRUE}. Defaults to \code{basename(path)}.
 #'
