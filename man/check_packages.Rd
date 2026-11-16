@@ -38,7 +38,11 @@ mode is \code{TRUE} when an \file{analysis/} directory exists at
 Default: FALSE.}
 
 \item{cleanup}{Logical. If TRUE, syncs to code (adds missing, removes
-unused). Equivalent to calling sync_packages(). Default: FALSE.}
+unused) by calling \code{\link{sync_packages}} with the same
+\code{strict}, \code{transitive}, \code{skip_image_pkgs}, and
+\code{image} settings. \code{auto_fix} and \code{validate_sources} do
+not apply. With \code{error_on_fail = TRUE}, the synced files are then
+re-checked as described under \code{error_on_fail}. Default: FALSE.}
 
 \item{verbose}{Logical. If TRUE, lists all issues found. Default: TRUE.}
 
@@ -60,10 +64,13 @@ breaking updates); ordinary \code{auto_fix} keeps pinned versions.
 Routes through \code{\link{sync_packages}}. Default: FALSE.}
 
 \item{error_on_fail}{Logical. If TRUE, raise an error (rather than
-returning) when validation fails. With \code{auto_fix = TRUE}, the
-files are re-checked after fixing, with the same \code{strict},
-\code{compendium}, \code{versions}, \code{skip_image_pkgs}, and
-\code{image} settings, and the error is raised only if issues remain. An error makes a non-interactive
+returning) when validation fails. With \code{auto_fix = TRUE} or
+\code{cleanup = TRUE}, the files are re-checked after fixing or
+syncing, with the same \code{strict}, \code{compendium},
+\code{versions}, \code{skip_image_pkgs}, and \code{image} settings,
+and the error is raised only if issues remain (under \code{cleanup},
+the condition's \code{result} is the re-check result). An error makes
+a non-interactive
 \command{Rscript} run exit with a non-zero status. The signalled
 condition has class \code{zzrenvcheck_validation_failure} and
 carries the result list in its \code{result} field. Default:
@@ -92,6 +99,8 @@ matches the zzcollab \code{PACKAGE_NAME} Makefile convention.}
 Invisibly returns a list with validation results. When
 \code{auto_fix} and \code{error_on_fail} are both TRUE and fixes were
 applied, \code{status_after_fix} gives the status of the re-check.
+With \code{cleanup = TRUE} or \code{fresh = TRUE}, returns the list of
+changes from \code{\link{sync_packages}} instead.
 }
 \description{
 Validates that all R packages used in code are properly declared in

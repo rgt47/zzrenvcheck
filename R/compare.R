@@ -28,7 +28,11 @@
 #' @param auto_fix Logical. If TRUE, automatically adds missing packages.
 #'   Default: FALSE.
 #' @param cleanup Logical. If TRUE, syncs to code (adds missing, removes
-#'   unused). Equivalent to calling sync_packages(). Default: FALSE.
+#'   unused) by calling \code{\link{sync_packages}} with the same
+#'   \code{strict}, \code{transitive}, \code{skip_image_pkgs}, and
+#'   \code{image} settings. \code{auto_fix} and \code{validate_sources} do
+#'   not apply. With \code{error_on_fail = TRUE}, the synced files are then
+#'   re-checked as described under \code{error_on_fail}. Default: FALSE.
 #' @param verbose Logical. If TRUE, lists all issues found. Default: TRUE.
 #' @param validate_sources Logical. If TRUE, checks if packages are installable
 #'   from CRAN/Bioconductor/GitHub before adding. Default: TRUE when auto_fix.
@@ -44,10 +48,13 @@
 #'   breaking updates); ordinary \code{auto_fix} keeps pinned versions.
 #'   Routes through \code{\link{sync_packages}}. Default: FALSE.
 #' @param error_on_fail Logical. If TRUE, raise an error (rather than
-#'   returning) when validation fails. With \code{auto_fix = TRUE}, the
-#'   files are re-checked after fixing, with the same \code{strict},
-#'   \code{compendium}, \code{versions}, \code{skip_image_pkgs}, and
-#'   \code{image} settings, and the error is raised only if issues remain. An error makes a non-interactive
+#'   returning) when validation fails. With \code{auto_fix = TRUE} or
+#'   \code{cleanup = TRUE}, the files are re-checked after fixing or
+#'   syncing, with the same \code{strict}, \code{compendium},
+#'   \code{versions}, \code{skip_image_pkgs}, and \code{image} settings,
+#'   and the error is raised only if issues remain (under \code{cleanup},
+#'   the condition's \code{result} is the re-check result). An error makes
+#'   a non-interactive
 #'   \command{Rscript} run exit with a non-zero status. The signalled
 #'   condition has class \code{zzrenvcheck_validation_failure} and
 #'   carries the result list in its \code{result} field. Default:
@@ -72,6 +79,8 @@
 #' @return Invisibly returns a list with validation results. When
 #'   \code{auto_fix} and \code{error_on_fail} are both TRUE and fixes were
 #'   applied, \code{status_after_fix} gives the status of the re-check.
+#'   With \code{cleanup = TRUE} or \code{fresh = TRUE}, returns the list of
+#'   changes from \code{\link{sync_packages}} instead.
 #'
 #' @section Auto-fix and installed versions:
 #' The check itself never inspects an installed library. When
@@ -112,8 +121,26 @@ check_packages <- function(strict = TRUE,
                            image = NULL,
                            path = ".") {
 
+  # cleanup is a fix, so it gates like auto_fix: re-check the synced files
+  # under the caller's rules and fail only if issues remain (for example a
+  # version conflict, which sync does not repair).
   if (cleanup) {
-    return(sync_packages(strict = strict, path = path, verbose = verbose))
+    changes <- sync_packages(strict = strict, path = path, verbose = verbose,
+                             transitive = transitive,
+                             skip_image_pkgs = skip_image_pkgs, image = image)
+    if (error_on_fail) {
+      after_sync <- suppressMessages(check_packages(
+        strict = strict, compendium = compendium, auto_fix = FALSE,
+        verbose = FALSE, validate_sources = FALSE, versions = versions,
+        error_on_fail = FALSE, skip_image_pkgs = skip_image_pkgs,
+        image = image, path = path
+      ))
+      if (identical(after_sync$status, "fail")) {
+        cli::cli_alert_danger("Issues remain after cleanup.")
+        signal_validation_failure(after_sync)
+      }
+    }
+    return(changes)
   }
 
   # fresh: rebuild renv.lock from a clean code scan, re-resolving every package
@@ -416,17 +443,29 @@ check_packages <- function(strict = TRUE,
 
   if (error_on_fail && identical(result$status, "fail")) {
     cli::cli_alert_danger("Validation failed.")
-    stop(structure(
-      class = c("zzrenvcheck_validation_failure", "error", "condition"),
-      list(
-        message = "Package dependency validation failed.",
-        call = NULL,
-        result = result
-      )
-    ))
+    signal_validation_failure(result)
   }
 
   invisible(result)
+}
+
+#' Signal a Validation Failure
+#'
+#' @param result List. The validation result carried by the condition.
+#'
+#' @return Does not return; raises a \code{zzrenvcheck_validation_failure}
+#'   error.
+#'
+#' @keywords internal
+signal_validation_failure <- function(result) {
+  stop(structure(
+    class = c("zzrenvcheck_validation_failure", "error", "condition"),
+    list(
+      message = "Package dependency validation failed.",
+      call = NULL,
+      result = result
+    )
+  ))
 }
 
 #' Handle Auto-Fix for renv.lock with Source Validation
