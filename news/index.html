@@ -37,6 +37,16 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="zzrenvcheck-development-version">zzrenvcheck (development version)<a class="anchor" aria-label="anchor" href="#zzrenvcheck-development-version"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<ul><li>
+<strong>The post-fix re-check now uses the caller’s settings.</strong> With <code>auto_fix = TRUE</code> and <code>error_on_fail = TRUE</code>, <code><a href="../reference/check_packages.html">check_packages()</a></code> re-checks the repaired files before deciding whether to fail. That re-check dropped <code>compendium</code>, <code>skip_image_pkgs</code>, and <code>image</code>, so it ran with <code>compendium = "auto"</code> and no image-package exemption. A fix that succeeded under the caller’s rules could then fail the gate, for example by requiring a <code>scripts/</code>-only package in DESCRIPTION under an explicit <code>compendium = TRUE</code>, or by flagging packages that <code>skip_image_pkgs = TRUE</code> had exempted. The re-check now forwards all three arguments.</li>
+<li>
+<strong>Documentation regenerated.</strong> <code>man/check_packages.Rd</code> and <code>man/sync_packages.Rd</code> now document <code>skip_image_pkgs</code> and <code>image</code>, which removes the <code>R CMD check</code> codoc WARNING.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.10.0" id="zzrenvcheck-0100">zzrenvcheck 0.10.0<a class="anchor" aria-label="anchor" href="#zzrenvcheck-0100"></a></h2>
 <div class="section level3">
 <h3 id="new-feature-0-10-0">New feature<a class="anchor" aria-label="anchor" href="#new-feature-0-10-0"></a></h3>

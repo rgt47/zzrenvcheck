@@ -17,6 +17,8 @@ check_packages(
   versions = TRUE,
   fresh = FALSE,
   error_on_fail = !interactive(),
+  skip_image_pkgs = FALSE,
+  image = NULL,
   path = "."
 )
 ```
@@ -83,14 +85,33 @@ check_packages(
 
   Logical. If TRUE, raise an error (rather than returning) when
   validation fails. With `auto_fix = TRUE`, the files are re-checked
-  after fixing and the error is raised only if issues remain. An error
-  makes a non-interactive `Rscript` run exit with a non-zero status. The
-  signalled condition has class `zzrenvcheck_validation_failure` and
-  carries the result list in its `result` field. Default:
-  `!interactive()`, so a failed check stops a script, a Makefile target,
-  or a CI job, while an interactive console session only reports. Pass
-  `error_on_fail = TRUE` explicitly in CI so the gate does not depend on
-  how R was started.
+  after fixing, with the same `strict`, `compendium`, `versions`,
+  `skip_image_pkgs`, and `image` settings, and the error is raised only
+  if issues remain. An error makes a non-interactive `Rscript` run exit
+  with a non-zero status. The signalled condition has class
+  `zzrenvcheck_validation_failure` and carries the result list in its
+  `result` field. Default: `!interactive()`, so a failed check stops a
+  script, a Makefile target, or a CI job, while an interactive console
+  session only reports. Pass `error_on_fail = TRUE` explicitly in CI so
+  the gate does not depend on how R was started.
+
+- skip_image_pkgs:
+
+  Logical. If TRUE, packages already installed in the Docker image
+  (site-library and base library, outside the renv project library) are
+  excluded from both `missing_in_description` and `missing_in_lock`, and
+  so are never added by `auto_fix`. The post-fix re-check applies the
+  same exclusion. These packages are available at runtime via
+  `external.libraries` and are pinned by the image digest in the
+  Dockerfile `FROM` line, so recording them in `renv.lock` is redundant.
+  Requires Docker to be available and the image to be built. Default:
+  FALSE.
+
+- image:
+
+  Character. Docker image name to query when `skip_image_pkgs = TRUE`.
+  Defaults to `basename(path)`, which matches the zzcollab
+  `PACKAGE_NAME` Makefile convention.
 
 - path:
 

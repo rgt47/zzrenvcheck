@@ -57,6 +57,8 @@ DESCRIPTION and locked in renv.lock for reproducibility.</p>
 <span>  versions <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  fresh <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  error_on_fail <span class="op">=</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  skip_image_pkgs <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  image <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  path <span class="op">=</span> <span class="st">"."</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -124,8 +126,9 @@ Routes through <code><a href="sync_packages.html">sync_packages</a></code>. Defa
 <dt id="arg-error-on-fail">error_on_fail<a class="anchor" aria-label="anchor" href="#arg-error-on-fail"></a></dt>
 <dd><p>Logical. If TRUE, raise an error (rather than
 returning) when validation fails. With <code>auto_fix = TRUE</code>, the
-files are re-checked after fixing and the error is raised only if
-issues remain. An error makes a non-interactive
+files are re-checked after fixing, with the same <code>strict</code>,
+<code>compendium</code>, <code>versions</code>, <code>skip_image_pkgs</code>, and
+<code>image</code> settings, and the error is raised only if issues remain. An error makes a non-interactive
 <code class="command">Rscript</code> run exit with a non-zero status. The signalled
 condition has class <code>zzrenvcheck_validation_failure</code> and
 carries the result list in its <code>result</code> field. Default:
@@ -133,6 +136,24 @@ carries the result list in its <code>result</code> field. Default:
 Makefile target, or a CI job, while an interactive console session
 only reports. Pass <code>error_on_fail = TRUE</code> explicitly in CI so
 the gate does not depend on how R was started.</p></dd>
+
+
+<dt id="arg-skip-image-pkgs">skip_image_pkgs<a class="anchor" aria-label="anchor" href="#arg-skip-image-pkgs"></a></dt>
+<dd><p>Logical. If TRUE, packages already installed in the
+Docker image (site-library and base library, outside the renv project
+library) are excluded from both <code>missing_in_description</code> and
+<code>missing_in_lock</code>, and so are never added by <code>auto_fix</code>. The
+post-fix re-check applies the same exclusion. These packages are
+available at runtime via <code>external.libraries</code> and are pinned by the
+image digest in the Dockerfile <code>FROM</code> line, so recording them in
+<code>renv.lock</code> is redundant. Requires Docker to be available and the
+image to be built. Default: FALSE.</p></dd>
+
+
+<dt id="arg-image">image<a class="anchor" aria-label="anchor" href="#arg-image"></a></dt>
+<dd><p>Character. Docker image name to query when
+<code>skip_image_pkgs = TRUE</code>. Defaults to <code>basename(path)</code>, which
+matches the zzcollab <code>PACKAGE_NAME</code> Makefile convention.</p></dd>
 
 
 <dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>

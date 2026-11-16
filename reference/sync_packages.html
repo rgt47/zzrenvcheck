@@ -55,7 +55,9 @@ removes unused packages.</p>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  dry_run <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  transitive <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  fresh <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  fresh <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  skip_image_pkgs <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  image <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,6 +92,21 @@ dependencies to renv.lock. Default: FALSE.</p></dd>
 renv.lock entry is overwritten at the current repository version rather
 than only adding missing packages. Implies <code>transitive = TRUE</code>. A
 deliberate version refresh. Default: FALSE.</p></dd>
+
+
+<dt id="arg-skip-image-pkgs">skip_image_pkgs<a class="anchor" aria-label="anchor" href="#arg-skip-image-pkgs"></a></dt>
+<dd><p>Logical. If TRUE, packages already installed in the
+Docker image (site-library and base library) are excluded from both
+DESCRIPTION and renv.lock as code packages, and any already listed in
+DESCRIPTION are removed.
+These packages are pinned by the image digest, not renv. Requires Docker
+and a built image; if either is unavailable, a warning is shown and no
+packages are excluded. Default: FALSE.</p></dd>
+
+
+<dt id="arg-image">image<a class="anchor" aria-label="anchor" href="#arg-image"></a></dt>
+<dd><p>Character. Docker image name to query when
+<code>skip_image_pkgs = TRUE</code>. Defaults to <code>basename(path)</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
