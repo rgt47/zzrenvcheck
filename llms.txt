@@ -148,7 +148,7 @@ check_packages()
 ```
 
 Version pins are read from pak and renv `@`-syntax
-(`pak::pak('dplyr@1.1.0')`, including vectorised and multi-argument
+(`pak::pak('dplyr@1.1.0')`, including vectorized and multi-argument
 calls), from `remotes`/`devtools` `install_version()`, and from the
 DESCRIPTION `Remotes:` field. In addition to the usual source
 directories, the reproducibility files `Dockerfile`, `install.sh`,
@@ -166,9 +166,9 @@ line-based.
 
 ### False Positive Filtering
 
-Applies 19 filters to avoid false positives: - Base R packages (base,
-utils, stats, etc.) - Placeholder names (myproject, package, foo, bar) -
-Generic words (my, your, file, path) - Invalid package names
+Filters candidate names to avoid false positives: - Base R packages
+(base, utils, stats, etc.) - Placeholder names (myproject, package, foo,
+bar) - Generic words (my, your, file, path) - Invalid package names
 
 ### Auto-Fix Capabilities
 
@@ -177,12 +177,17 @@ Generic words (my, your, file, path) - Invalid package names
 # Automatically adds missing packages
 fix_packages()
 
-# Output:
+# Output (abridged):
 # Auto-Fixing DESCRIPTION
 # Added dplyr to DESCRIPTION Imports
-# Added dplyr (1.1.4) to renv.lock
-# All packages added
+# All packages added to DESCRIPTION
+# Auto-Fixing renv.lock
+# Added dplyr (1.1.4, installed) to renv.lock
 ```
+
+When it adds a package to `renv.lock`, auto-fix records the version
+installed in the current library; if the package is not installed, it
+records the current CRAN version and labels it as such.
 
 ### Status Reports
 
@@ -350,7 +355,7 @@ check_installable(c("dplyr", "DESeq2", "NonExistent"))
 | **Remove unused packages** | Yes | Yes |
 | **Create renv.lock** | Yes | Yes |
 | **Documentation** | `--help` | Built-in [`?help`](https://rdrr.io/r/utils/help.html) |
-| **Testing** | Manual | testthat (101 tests) |
+| **Testing** | Manual | tinytest |
 | **Output Format** | Colored CLI | Rich CLI (cli pkg) |
 
 **Recommendation**:
@@ -364,14 +369,40 @@ check_installable(c("dplyr", "DESeq2", "NonExistent"))
 
 ``` r
 
-# Standard mode (default)
-check_packages(strict = FALSE)
-# Scans: R/, scripts/, analysis/
-
-# Strict mode
+# Strict mode (default for check_packages(), fix_packages(),
+# and sync_packages())
 check_packages(strict = TRUE)
 # Scans: R/, scripts/, analysis/, tests/, vignettes/, inst/
+
+# Standard mode (default for report_packages())
+check_packages(strict = FALSE)
+# Scans: R/, scripts/, analysis/
 ```
+
+In a research compendium (an `analysis/` directory exists, or
+`compendium = TRUE`), only packages used in `R/` must appear in
+DESCRIPTION; packages used only in `analysis/` or `scripts/` need only
+be in `renv.lock`.
+
+### Failing the Gate
+
+`error_on_fail` defaults to `!interactive()`: under `Rscript`, a failed
+check signals an error of class `zzrenvcheck_validation_failure` and the
+process exits non-zero, while an interactive session only reports. With
+`auto_fix = TRUE`, the files are re-checked after fixing, with the same
+`strict`, `compendium`, `versions`, `skip_image_pkgs`, and `image`
+settings, and the error is raised only if issues remain.
+`cleanup = TRUE` currently delegates to
+[`sync_packages()`](https://rgt47.github.io/zzrenvcheck/reference/sync_packages.md)
+without forwarding `error_on_fail`, so it does not act as a gate.
+
+### Packages Supplied by a Docker Image
+
+With `skip_image_pkgs = TRUE`, packages already installed in the
+project’s Docker image (queried via `docker run`; the image name
+defaults to `basename(path)` and can be set with `image`) are excluded
+from the missing-package lists and are never added by auto-fix. Docker
+must be available and the image built.
 
 ### Verbosity
 
@@ -386,12 +417,12 @@ check_packages(verbose = FALSE)
 
 ## Development Status
 
-**Version**: 0.1.0.9000 (Development)
+**Version**: 0.10.0 (Development; not on CRAN)
 
 **Implemented**:
 
 - Core extraction functions
-- Package name cleaning (19 filters)
+- Package name cleaning
 - DESCRIPTION/renv.lock parsing
 - Validation logic with installable vs non-installable reporting
 - Auto-fix via CRAN API
@@ -401,9 +432,12 @@ check_packages(verbose = FALSE)
 - Remove unused packages from DESCRIPTION and renv.lock
 - Create renv.lock from scratch
 - CLI output with `cli` package
-- Comprehensive test suite (101 tests)
+- Version synchronization across DESCRIPTION, renv.lock, and code pins
+- Research-compendium exemption (`compendium`)
+- Optional exclusion of Docker-image packages (`skip_image_pkgs`)
+- tinytest test suite
 
-**Planned** (v0.2.0):
+**Planned** (not yet implemented):
 
 - RStudio Addin
 - Configuration file (`.zzrenvcheck.yaml`)

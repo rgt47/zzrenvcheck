@@ -176,14 +176,14 @@
 <span><span class="co"># ! dplyr: code pin 1.2.0 != renv.lock 1.1.0; renv.lock 1.1.0 violates</span></span>
 <span><span class="co">#   DESCRIPTION (&gt;= 2.0.0)</span></span>
 <span><span class="co"># i Reproducibility requires matching versions across all sources.</span></span></code></pre></div>
-<p>Version pins are read from pak and renv <code>@</code>-syntax (<code>pak::pak('dplyr@1.1.0')</code>, including vectorised and multi-argument calls), from <code>remotes</code>/<code>devtools</code> <code>install_version()</code>, and from the DESCRIPTION <code>Remotes:</code> field. In addition to the usual source directories, the reproducibility files <code>Dockerfile</code>, <code>install.sh</code>, <code>Makefile</code>, and <code>.Rprofile</code> are scanned, because pinned installs there commonly drift from <code>renv.lock</code>.</p>
+<p>Version pins are read from pak and renv <code>@</code>-syntax (<code>pak::pak('dplyr@1.1.0')</code>, including vectorized and multi-argument calls), from <code>remotes</code>/<code>devtools</code> <code>install_version()</code>, and from the DESCRIPTION <code>Remotes:</code> field. In addition to the usual source directories, the reproducibility files <code>Dockerfile</code>, <code>install.sh</code>, <code>Makefile</code>, and <code>.Rprofile</code> are scanned, because pinned installs there commonly drift from <code>renv.lock</code>.</p>
 <p>The check is report-only (it never rewrites versions) and is controlled by the <code>versions</code> argument (default <code>TRUE</code>). Conflicts are returned in the <code>version_conflicts</code> element and set the result status to <code>fail</code>.</p>
 <p>Two forms are deliberately not compared: pak requirement and keyword refs (<code>pkg@&gt;=1.6.0</code>, <code>pkg@last</code>, <code>pkg@current</code>), which are not exact pins; and pins split across multiple lines, because scanning is line-based.</p>
 </div>
 <div class="section level3">
 <h3 id="false-positive-filtering">False Positive Filtering<a class="anchor" aria-label="anchor" href="#false-positive-filtering"></a>
 </h3>
-<p>Applies 19 filters to avoid false positives: - Base R packages (base, utils, stats, etc.) - Placeholder names (myproject, package, foo, bar) - Generic words (my, your, file, path) - Invalid package names</p>
+<p>Filters candidate names to avoid false positives: - Base R packages (base, utils, stats, etc.) - Placeholder names (myproject, package, foo, bar) - Generic words (my, your, file, path) - Invalid package names</p>
 </div>
 <div class="section level3">
 <h3 id="auto-fix-capabilities">Auto-Fix Capabilities<a class="anchor" aria-label="anchor" href="#auto-fix-capabilities"></a>
@@ -192,11 +192,13 @@
 <code class="sourceCode R"><span><span class="co"># Automatically adds missing packages</span></span>
 <span><span class="fu"><a href="reference/fix_packages.html">fix_packages</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Output:</span></span>
+<span><span class="co"># Output (abridged):</span></span>
 <span><span class="co"># Auto-Fixing DESCRIPTION</span></span>
 <span><span class="co"># Added dplyr to DESCRIPTION Imports</span></span>
-<span><span class="co"># Added dplyr (1.1.4) to renv.lock</span></span>
-<span><span class="co"># All packages added</span></span></code></pre></div>
+<span><span class="co"># All packages added to DESCRIPTION</span></span>
+<span><span class="co"># Auto-Fixing renv.lock</span></span>
+<span><span class="co"># Added dplyr (1.1.4, installed) to renv.lock</span></span></code></pre></div>
+<p>When it adds a package to <code>renv.lock</code>, auto-fix records the version installed in the current library; if the package is not installed, it records the current CRAN version and labels it as such.</p>
 </div>
 <div class="section level3">
 <h3 id="status-reports">Status Reports<a class="anchor" aria-label="anchor" href="#status-reports"></a>
@@ -486,7 +488,7 @@
 <tr>
 <td><strong>Testing</strong></td>
 <td>Manual</td>
-<td>testthat (101 tests)</td>
+<td>tinytest</td>
 </tr>
 <tr>
 <td><strong>Output Format</strong></td>
@@ -510,13 +512,25 @@
 <h3 id="directory-scanning">Directory Scanning<a class="anchor" aria-label="anchor" href="#directory-scanning"></a>
 </h3>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Standard mode (default)</span></span>
-<span><span class="fu"><a href="reference/check_packages.html">check_packages</a></span><span class="op">(</span>strict <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co"># Scans: R/, scripts/, analysis/</span></span>
-<span></span>
-<span><span class="co"># Strict mode</span></span>
+<code class="sourceCode R"><span><span class="co"># Strict mode (default for check_packages(), fix_packages(),</span></span>
+<span><span class="co"># and sync_packages())</span></span>
 <span><span class="fu"><a href="reference/check_packages.html">check_packages</a></span><span class="op">(</span>strict <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co"># Scans: R/, scripts/, analysis/, tests/, vignettes/, inst/</span></span></code></pre></div>
+<span><span class="co"># Scans: R/, scripts/, analysis/, tests/, vignettes/, inst/</span></span>
+<span></span>
+<span><span class="co"># Standard mode (default for report_packages())</span></span>
+<span><span class="fu"><a href="reference/check_packages.html">check_packages</a></span><span class="op">(</span>strict <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co"># Scans: R/, scripts/, analysis/</span></span></code></pre></div>
+<p>In a research compendium (an <code>analysis/</code> directory exists, or <code>compendium = TRUE</code>), only packages used in <code>R/</code> must appear in DESCRIPTION; packages used only in <code>analysis/</code> or <code>scripts/</code> need only be in <code>renv.lock</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="failing-the-gate">Failing the Gate<a class="anchor" aria-label="anchor" href="#failing-the-gate"></a>
+</h3>
+<p><code>error_on_fail</code> defaults to <code>!interactive()</code>: under <code>Rscript</code>, a failed check signals an error of class <code>zzrenvcheck_validation_failure</code> and the process exits non-zero, while an interactive session only reports. With <code>auto_fix = TRUE</code>, the files are re-checked after fixing, with the same <code>strict</code>, <code>compendium</code>, <code>versions</code>, <code>skip_image_pkgs</code>, and <code>image</code> settings, and the error is raised only if issues remain. <code>cleanup = TRUE</code> currently delegates to <code><a href="reference/sync_packages.html">sync_packages()</a></code> without forwarding <code>error_on_fail</code>, so it does not act as a gate.</p>
+</div>
+<div class="section level3">
+<h3 id="packages-supplied-by-a-docker-image">Packages Supplied by a Docker Image<a class="anchor" aria-label="anchor" href="#packages-supplied-by-a-docker-image"></a>
+</h3>
+<p>With <code>skip_image_pkgs = TRUE</code>, packages already installed in the project’s Docker image (queried via <code>docker run</code>; the image name defaults to <code>basename(path)</code> and can be set with <code>image</code>) are excluded from the missing-package lists and are never added by auto-fix. Docker must be available and the image built.</p>
 </div>
 <div class="section level3">
 <h3 id="verbosity">Verbosity<a class="anchor" aria-label="anchor" href="#verbosity"></a>
@@ -532,11 +546,11 @@
 <div class="section level2">
 <h2 id="development-status">Development Status<a class="anchor" aria-label="anchor" href="#development-status"></a>
 </h2>
-<p><strong>Version</strong>: 0.1.0.9000 (Development)</p>
+<p><strong>Version</strong>: 0.10.0 (Development; not on CRAN)</p>
 <p><strong>Implemented</strong>:</p>
 <ul>
 <li>Core extraction functions</li>
-<li>Package name cleaning (19 filters)</li>
+<li>Package name cleaning</li>
 <li>DESCRIPTION/renv.lock parsing</li>
 <li>Validation logic with installable vs non-installable reporting</li>
 <li>Auto-fix via CRAN API</li>
@@ -546,9 +560,12 @@
 <li>Remove unused packages from DESCRIPTION and renv.lock</li>
 <li>Create renv.lock from scratch</li>
 <li>CLI output with <code>cli</code> package</li>
-<li>Comprehensive test suite (101 tests)</li>
+<li>Version synchronization across DESCRIPTION, renv.lock, and code pins</li>
+<li>Research-compendium exemption (<code>compendium</code>)</li>
+<li>Optional exclusion of Docker-image packages (<code>skip_image_pkgs</code>)</li>
+<li>tinytest test suite</li>
 </ul>
-<p><strong>Planned</strong> (v0.2.0):</p>
+<p><strong>Planned</strong> (not yet implemented):</p>
 <ul>
 <li>RStudio Addin</li>
 <li>Configuration file (<code>.zzrenvcheck.yaml</code>)</li>
