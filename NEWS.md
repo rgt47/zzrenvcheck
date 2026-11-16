@@ -12,6 +12,19 @@
   explicit `compendium = TRUE`, or by flagging packages that
   `skip_image_pkgs = TRUE` had exempted. The re-check now forwards all
   three arguments.
+* **`cleanup = TRUE` now honors `error_on_fail` and the caller's
+  settings.** `check_packages(cleanup = TRUE)` returned the result of
+  `sync_packages()` directly, forwarding only `strict`, `path`, and
+  `verbose`. It never signaled a failure, so a CI step using
+  `cleanup = TRUE` had no gate, and because `error_on_fail` defaults to
+  `!interactive()` this applied to every `Rscript` cleanup call. It also
+  ignored `transitive`, `skip_image_pkgs`, and `image`. The sync now
+  receives those three arguments, and with `error_on_fail = TRUE` the
+  synced files are re-checked with the same `strict`, `compendium`,
+  `versions`, `skip_image_pkgs`, and `image` settings. An error of class
+  `zzrenvcheck_validation_failure` is raised only if issues remain, for
+  example a version conflict, which the sync does not repair. A
+  non-interactive cleanup run that previously succeeded can now fail.
 * **Documentation regenerated.** `man/check_packages.Rd` and
   `man/sync_packages.Rd` now document `skip_image_pkgs` and `image`,
   which removes the `R CMD check` codoc WARNING.
