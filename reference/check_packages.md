@@ -47,8 +47,13 @@ check_packages(
 
 - cleanup:
 
-  Logical. If TRUE, syncs to code (adds missing, removes unused).
-  Equivalent to calling sync_packages(). Default: FALSE.
+  Logical. If TRUE, syncs to code (adds missing, removes unused) by
+  calling
+  [`sync_packages`](https://rgt47.github.io/zzrenvcheck/reference/sync_packages.md)
+  with the same `strict`, `transitive`, `skip_image_pkgs`, and `image`
+  settings. `auto_fix` and `validate_sources` do not apply. With
+  `error_on_fail = TRUE`, the synced files are then re-checked as
+  described under `error_on_fail`. Default: FALSE.
 
 - verbose:
 
@@ -84,16 +89,18 @@ check_packages(
 - error_on_fail:
 
   Logical. If TRUE, raise an error (rather than returning) when
-  validation fails. With `auto_fix = TRUE`, the files are re-checked
-  after fixing, with the same `strict`, `compendium`, `versions`,
-  `skip_image_pkgs`, and `image` settings, and the error is raised only
-  if issues remain. An error makes a non-interactive `Rscript` run exit
-  with a non-zero status. The signalled condition has class
-  `zzrenvcheck_validation_failure` and carries the result list in its
-  `result` field. Default: `!interactive()`, so a failed check stops a
-  script, a Makefile target, or a CI job, while an interactive console
-  session only reports. Pass `error_on_fail = TRUE` explicitly in CI so
-  the gate does not depend on how R was started.
+  validation fails. With `auto_fix = TRUE` or `cleanup = TRUE`, the
+  files are re-checked after fixing or syncing, with the same `strict`,
+  `compendium`, `versions`, `skip_image_pkgs`, and `image` settings, and
+  the error is raised only if issues remain (under `cleanup`, the
+  condition's `result` is the re-check result). An error makes a
+  non-interactive `Rscript` run exit with a non-zero status. The
+  signalled condition has class `zzrenvcheck_validation_failure` and
+  carries the result list in its `result` field. Default:
+  `!interactive()`, so a failed check stops a script, a Makefile target,
+  or a CI job, while an interactive console session only reports. Pass
+  `error_on_fail = TRUE` explicitly in CI so the gate does not depend on
+  how R was started.
 
 - skip_image_pkgs:
 
@@ -121,7 +128,10 @@ check_packages(
 
 Invisibly returns a list with validation results. When `auto_fix` and
 `error_on_fail` are both TRUE and fixes were applied, `status_after_fix`
-gives the status of the re-check.
+gives the status of the re-check. With `cleanup = TRUE` or
+`fresh = TRUE`, returns the list of changes from
+[`sync_packages`](https://rgt47.github.io/zzrenvcheck/reference/sync_packages.md)
+instead.
 
 ## Details
 

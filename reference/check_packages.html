@@ -91,7 +91,11 @@ Default: FALSE.</p></dd>
 
 <dt id="arg-cleanup">cleanup<a class="anchor" aria-label="anchor" href="#arg-cleanup"></a></dt>
 <dd><p>Logical. If TRUE, syncs to code (adds missing, removes
-unused). Equivalent to calling sync_packages(). Default: FALSE.</p></dd>
+unused) by calling <code><a href="sync_packages.html">sync_packages</a></code> with the same
+<code>strict</code>, <code>transitive</code>, <code>skip_image_pkgs</code>, and
+<code>image</code> settings. <code>auto_fix</code> and <code>validate_sources</code> do
+not apply. With <code>error_on_fail = TRUE</code>, the synced files are then
+re-checked as described under <code>error_on_fail</code>. Default: FALSE.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -125,10 +129,13 @@ Routes through <code><a href="sync_packages.html">sync_packages</a></code>. Defa
 
 <dt id="arg-error-on-fail">error_on_fail<a class="anchor" aria-label="anchor" href="#arg-error-on-fail"></a></dt>
 <dd><p>Logical. If TRUE, raise an error (rather than
-returning) when validation fails. With <code>auto_fix = TRUE</code>, the
-files are re-checked after fixing, with the same <code>strict</code>,
-<code>compendium</code>, <code>versions</code>, <code>skip_image_pkgs</code>, and
-<code>image</code> settings, and the error is raised only if issues remain. An error makes a non-interactive
+returning) when validation fails. With <code>auto_fix = TRUE</code> or
+<code>cleanup = TRUE</code>, the files are re-checked after fixing or
+syncing, with the same <code>strict</code>, <code>compendium</code>,
+<code>versions</code>, <code>skip_image_pkgs</code>, and <code>image</code> settings,
+and the error is raised only if issues remain (under <code>cleanup</code>,
+the condition's <code>result</code> is the re-check result). An error makes
+a non-interactive
 <code class="command">Rscript</code> run exit with a non-zero status. The signalled
 condition has class <code>zzrenvcheck_validation_failure</code> and
 carries the result list in its <code>result</code> field. Default:
@@ -164,7 +171,9 @@ matches the zzcollab <code>PACKAGE_NAME</code> Makefile convention.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly returns a list with validation results. When
 <code>auto_fix</code> and <code>error_on_fail</code> are both TRUE and fixes were
-applied, <code>status_after_fix</code> gives the status of the re-check.</p>
+applied, <code>status_after_fix</code> gives the status of the re-check.
+With <code>cleanup = TRUE</code> or <code>fresh = TRUE</code>, returns the list of
+changes from <code><a href="sync_packages.html">sync_packages</a></code> instead.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

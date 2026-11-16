@@ -392,9 +392,10 @@ process exits non-zero, while an interactive session only reports. With
 `auto_fix = TRUE`, the files are re-checked after fixing, with the same
 `strict`, `compendium`, `versions`, `skip_image_pkgs`, and `image`
 settings, and the error is raised only if issues remain.
-`cleanup = TRUE` currently delegates to
-[`sync_packages()`](https://rgt47.github.io/zzrenvcheck/reference/sync_packages.md)
-without forwarding `error_on_fail`, so it does not act as a gate.
+`cleanup = TRUE` gates the same way: the files are re-checked after the
+sync, and the error is raised only if issues remain (for example a
+version conflict, which the sync does not repair). `fresh = TRUE` does
+not act as a gate.
 
 ### Packages Supplied by a Docker Image
 
